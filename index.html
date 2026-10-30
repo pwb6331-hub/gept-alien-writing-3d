@@ -2,25 +2,35 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GEPT 初級英檢寫作精進外星互動島 3D | Alien Writing Archipelago</title>
-  <!-- Google Fonts: 思源黑體 Noto Sans TC + Orbitron 科幻英文字體 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GEPT 初級英檢寫作精進・外星微縮海圖 3D 互動群島 | Deep WebGL Audited Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
-  <!-- Three.js & OrbitControls via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <!-- Three.js r160 ES Modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
   <style>
     :root {
-      --bg-space: #050814;
-      --neon-blue: #00f0ff;
-      --neon-gold: #ffbe0b;
-      --neon-green: #00ff88;
-      --neon-purple: #b5179e;
-      --neon-magenta: #f72585;
-      --card-bg: rgba(10, 16, 36, 0.85);
-      --border-glow: rgba(0, 240, 255, 0.35);
+      /* 海圖深海藍與四鄉五島膠囊同步色票 */
+      --chart-navy: #0c335e;
+      --chart-navy-dark: #061b36;
+      --nangan-gold: #c57b30;
+      --beigan-olive: #586e33;
+      --dongyin-teal: #1c6472;
+      --juguang-purple: #6c4f8f;
+      --alien-cyan: #00f0ff;
+      --alien-emerald: #10b981;
+      --glass-panel: rgba(12, 35, 68, 0.88);
+      --glass-border: rgba(147, 197, 253, 0.38);
     }
 
     * {
@@ -28,350 +38,427 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-font-smoothing: antialiased;
     }
 
-    body {
-      overflow: hidden;
+    body, html {
       width: 100vw;
       height: 100vh;
-      background-color: var(--bg-space);
-      font-family: 'Noto Sans TC', sans-serif;
-      color: #e0f2fe;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, #103c6e 0%, #092244 55%, #041022 100%);
+      font-family: 'Noto Sans TC', 'Source Han Sans TW', 'PingFang TC', sans-serif;
+      color: #f0f9ff;
     }
 
-    #webgl-canvas {
+    #webgl-container {
       position: absolute;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100%;
       height: 100%;
       z-index: 1;
     }
 
-    /* 頂部全息導航列 */
+    /* 頂部海圖深海藍導航列 */
     header {
       position: absolute;
-      top: 16px;
-      left: 20px;
-      right: 20px;
-      z-index: 10;
+      top: 14px;
+      left: 18px;
+      right: 18px;
+      z-index: 20;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
       pointer-events: none;
     }
 
-    .brand-box {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-glow);
-      padding: 12px 24px;
-      border-radius: 12px;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+    .brand-plaque {
+      background: linear-gradient(135deg, rgba(12, 51, 94, 0.95), rgba(6, 27, 54, 0.92));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      border-left: 5px solid var(--nangan-gold);
+      padding: 10px 20px;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
       pointer-events: auto;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .brand-plaque:hover {
+      transform: translateY(-2px);
     }
 
     .brand-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 900;
-      background: linear-gradient(90deg, #00f0ff, #ffbe0b, #00ff88);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      letter-spacing: 1px;
-    }
-
-    .brand-sub {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 4px;
-      font-family: 'Orbitron', sans-serif;
-      letter-spacing: 1.5px;
-    }
-
-    /* 四星區快速跳轉膠囊列 */
-    .capsule-nav {
-      display: flex;
-      gap: 10px;
-      pointer-events: auto;
-    }
-
-    .capsule-btn {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #f8fafc;
-      padding: 8px 16px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
+      color: #ffffff;
+      letter-spacing: 0.8px;
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    .capsule-btn:hover {
-      transform: translateY(-2px);
+    .brand-title .badge-pill {
+      font-size: 11px;
+      background: var(--nangan-gold);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+
+    .brand-sub {
+      font-size: 11.5px;
+      color: #bae6fd;
+      margin-top: 3px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* 四島膠囊色票同步導航 */
+    .capsule-bar {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .island-capsule {
+      background: var(--capsule-bg, #0c335e);
+      color: #ffffff;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      padding: 8px 15px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: 0.3px;
+    }
+
+    .island-capsule:hover {
+      transform: translateY(-2px) scale(1.03);
       border-color: #ffffff;
-      box-shadow: 0 0 16px var(--glow-color, rgba(0, 240, 255, 0.6));
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
     }
 
-    .capsule-btn.active {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: var(--theme-color, #00f0ff);
-      box-shadow: 0 0 20px var(--glow-color, rgba(0, 240, 255, 0.7));
+    .island-capsule.active {
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.55);
+      transform: translateY(-2px);
     }
 
-    .dot {
-      width: 10px;
-      height: 10px;
+    .capsule-dot {
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background-color: var(--theme-color);
-      box-shadow: 0 0 8px var(--theme-color);
+      background: #fff;
+      box-shadow: 0 0 6px #fff;
     }
 
-    /* 右側戰情儀表板面板 */
-    #mission-panel {
-      position: absolute;
-      top: 90px;
-      right: 20px;
-      width: 380px;
-      max-height: calc(100vh - 180px);
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glow);
-      border-radius: 16px;
-      padding: 20px;
-      z-index: 10;
+    /* 3D 懸浮島嶼名牌 (CSS2DRenderer 精準綁定) */
+    .diorama-label {
+      pointer-events: auto;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.15);
-      overflow-y: auto;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+      align-items: center;
+      transform: translateY(-18px);
+      transition: transform 0.2s ease;
+    }
+    .diorama-label:hover {
+      transform: translateY(-23px) scale(1.06);
+    }
+    .diorama-pill {
+      background: var(--pill-bg, #0c335e);
+      color: #fff;
+      border: 1.5px solid rgba(255, 255, 255, 0.88);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+      letter-spacing: 0.5px;
+    }
+    .diorama-sub-pill {
+      margin-top: 2px;
+      background: rgba(6, 27, 54, 0.9);
+      color: #fde68a;
+      border: 1px solid rgba(253, 230, 138, 0.45);
+      padding: 1.5px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .diorama-stem {
+      width: 2px;
+      height: 14px;
+      background: linear-gradient(to bottom, #ffffff, transparent);
     }
 
-    #mission-panel.collapsed {
-      transform: translateX(420px);
+    /* 右側英檢寫作診斷與地標戰情抽屜 */
+    #writing-drawer {
+      position: absolute;
+      top: 84px;
+      right: 18px;
+      width: 400px;
+      max-height: calc(100vh - 165px);
+      background: var(--glass-panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 18px 20px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+      overflow-y: auto;
+      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+
+    #writing-drawer.collapsed {
+      transform: translateX(440px);
       opacity: 0;
       pointer-events: none;
     }
 
-    .panel-header {
+    .drawer-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      padding-bottom: 10px;
     }
 
-    .panel-tag {
+    .sector-chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
       font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--neon-blue);
-      display: block;
-      margin-bottom: 4px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--nangan-gold);
+      margin-bottom: 5px;
     }
 
-    .panel-title {
+    .drawer-title {
       font-size: 18px;
       font-weight: 900;
-      color: #fff;
+      color: #ffffff;
+      line-height: 1.3;
     }
 
-    .close-btn {
-      background: none;
-      border: none;
-      color: #64748b;
-      font-size: 20px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 4px;
-    }
-    .close-btn:hover { color: #fff; }
-
-    .target-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      background: rgba(247, 37, 133, 0.2);
-      border: 1px solid rgba(247, 37, 133, 0.5);
-      border-radius: 6px;
-      font-size: 12px;
-      color: #ff70a6;
-      font-weight: 700;
+    .drawer-landmark {
+      font-size: 11.5px;
+      color: #93c5fd;
+      font-weight: 600;
+      margin-top: 3px;
     }
 
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-
-    .error-card {
-      background: rgba(255, 77, 77, 0.1);
-      border-left: 3px solid #ff4d4d;
-      padding: 10px 12px;
-      border-radius: 0 8px 8px 0;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .error-card strike {
-      color: #fca5a5;
-    }
-
-    .solution-card {
-      background: rgba(0, 255, 136, 0.1);
-      border-left: 3px solid var(--neon-green);
-      padding: 10px 12px;
-      border-radius: 0 8px 8px 0;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .formula-box {
-      background: rgba(255, 190, 11, 0.12);
-      border: 1px dashed var(--neon-gold);
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #fef08a;
-      line-height: 1.5;
-    }
-
-    .voice-action-btn {
-      background: linear-gradient(135deg, #00f0ff, #3a86ff);
-      color: #000;
-      font-weight: 900;
-      border: none;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
+    .drawer-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 15px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
-      transition: all 0.2s ease;
-      margin-top: 6px;
+    }
+    .drawer-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
     }
 
-    .voice-action-btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 20px rgba(0, 240, 255, 0.7);
+    .card-block {
+      padding: 11px 13px;
+      border-radius: 11px;
+      font-size: 12.5px;
+      line-height: 1.6;
     }
 
-    /* 底部控制列 */
-    footer {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      gap: 12px;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      padding: 10px 20px;
-      border-radius: 50px;
-      border: 1px solid var(--border-glow);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    .card-error {
+      background: rgba(239, 68, 68, 0.15);
+      border-left: 4px solid #f87171;
+      color: #fee2e2;
+    }
+    .card-error strike {
+      color: #fca5a5;
+      margin: 0 2px;
     }
 
-    .tool-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #e2e8f0;
-      padding: 8px 16px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
+    .card-audit {
+      background: rgba(245, 158, 11, 0.16);
+      border-left: 4px solid #fbbf24;
+      color: #fef3c7;
+    }
+
+    .card-solution {
+      background: rgba(16, 185, 129, 0.16);
+      border-left: 4px solid #34d399;
+      color: #d1fae5;
+    }
+
+    .card-chant {
+      background: rgba(14, 165, 233, 0.18);
+      border: 1px dashed #38bdf8;
+      color: #e0f2fe;
+      font-weight: 700;
+    }
+
+    .block-label {
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
+      color: #fff;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .btn-voice {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      transition: transform 0.18s;
+    }
+    .btn-voice:hover { transform: translateY(-1px); }
+
+    .btn-quiz {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      transition: transform 0.18s;
+    }
+    .btn-quiz:hover { transform: translateY(-1px); }
+
+    /* 互動改錯快篩練習區 */
+    .quiz-box {
+      background: rgba(6, 20, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 11px;
+      padding: 11px 13px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .quiz-box.active {
+      display: flex;
+    }
+    .quiz-option {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f8fafc;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .quiz-option:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+    }
+    .quiz-option.correct {
+      background: rgba(16, 185, 129, 0.35);
+      border-color: #10b981;
+      color: #a7f3d0;
+    }
+    .quiz-option.wrong {
+      background: rgba(239, 68, 68, 0.35);
+      border-color: #ef4444;
+      color: #fecaca;
+    }
+
+    /* 底部多功能海圖波浪與巡航工具列 */
+    footer {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(12, 51, 94, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      padding: 7px 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+    }
+
+    .hud-tool {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e0f2fe;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       transition: all 0.2s;
     }
-
-    .tool-btn:hover {
-      background: rgba(0, 240, 255, 0.2);
-      border-color: var(--neon-blue);
+    .hud-tool:hover {
+      background: rgba(255, 255, 255, 0.22);
       color: #fff;
     }
-
-    .tool-btn.active {
-      background: var(--neon-blue);
-      color: #050814;
-      font-weight: 800;
-      border-color: var(--neon-blue);
-    }
-
-    /* 3D 浮動標籤風格 */
-    .floating-hud {
-      position: absolute;
-      pointer-events: none;
-      transform: translate(-50%, -100%);
-      z-index: 5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: opacity 0.3s;
-    }
-
-    .hud-label {
-      background: rgba(5, 8, 20, 0.85);
-      border: 1px solid var(--hud-color, #00f0ff);
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.8px;
+    .hud-tool.active {
+      background: var(--nangan-gold);
       color: #fff;
-      white-space: nowrap;
-      box-shadow: 0 0 12px var(--hud-glow, rgba(0, 240, 255, 0.5));
+      border-color: #fde68a;
+      box-shadow: 0 0 14px rgba(197, 123, 48, 0.6);
     }
 
-    .hud-pin {
-      width: 2px;
-      height: 16px;
-      background: linear-gradient(to bottom, var(--hud-color, #00f0ff), transparent);
-    }
-
-    /* 語音播報動畫波紋 */
-    .audio-wave {
-      display: inline-flex;
-      align-items: flex-end;
-      gap: 2px;
-      height: 14px;
-    }
-    .wave-bar {
-      width: 3px;
-      background: #000;
-      border-radius: 2px;
-      animation: soundWave 0.8s infinite ease-in-out alternate;
-    }
-    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
-    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes soundWave {
-      0% { height: 4px; }
-      100% { height: 14px; }
-    }
-
-    /* 手機與平板 RWD 響應式適配 */
-    @media (max-width: 768px) {
+    /* RWD 手機與平板響應式最佳化 */
+    @media (max-width: 860px) {
       header {
         top: 10px;
         left: 10px;
@@ -380,47 +467,48 @@
         align-items: stretch;
         gap: 8px;
       }
-      .brand-box {
+      .brand-plaque {
         padding: 8px 14px;
       }
       .brand-title {
-        font-size: 15px;
+        font-size: 15.5px;
       }
       .brand-sub {
-        font-size: 10px;
+        font-size: 10.5px;
       }
-      .capsule-nav {
+      .capsule-bar {
+        justify-content: flex-start;
         overflow-x: auto;
+        flex-wrap: nowrap;
         padding-bottom: 4px;
         -webkit-overflow-scrolling: touch;
       }
-      .capsule-btn {
+      .island-capsule {
         padding: 6px 12px;
-        font-size: 11px;
-        white-space: nowrap;
+        font-size: 11.5px;
         flex-shrink: 0;
       }
-      #mission-panel {
+      #writing-drawer {
         top: auto;
-        bottom: 75px;
-        right: 10px;
+        bottom: 68px;
         left: 10px;
+        right: 10px;
         width: auto;
-        max-height: 48vh;
+        max-height: 46vh;
         padding: 14px;
-        border-radius: 14px;
       }
-      #mission-panel.collapsed {
+      #writing-drawer.collapsed {
         transform: translateY(120%);
       }
       footer {
-        bottom: 12px;
-        width: 92%;
+        bottom: 10px;
+        width: calc(100vw - 20px);
         justify-content: center;
-        padding: 6px 12px;
-        gap: 6px;
+        overflow-x: auto;
+        padding: 6px 10px;
+        gap: 5px;
       }
-      .tool-btn {
+      .hud-tool {
         padding: 6px 10px;
         font-size: 11px;
       }
@@ -428,965 +516,1582 @@
   </style>
 </head>
 <body>
-  <!-- 3D WebGL 畫布容器 -->
-  <div id="webgl-canvas"></div>
 
-  <!-- 頂部導航 -->
+  <div id="webgl-container"></div>
+
+  <!-- 頂部海圖深海藍 (#0c335e) 標題與四鄉膠囊色票導航列 -->
   <header>
-    <div class="brand-box">
+    <div class="brand-plaque" onclick="window.resetOverview()">
       <div class="brand-title">
-        <span>🪐 GEPT ALIEN ARCHIPELAGO</span>
+        <span>🪐 外星・四鄉五島英檢寫作精進群島</span>
+        <span class="badge-pill">GEPT 初級複試</span>
       </div>
-      <div class="brand-sub">初級英檢寫作精進・外星微縮互動島</div>
+      <div class="brand-sub">128×96 頂點波浪海圖融合 × 四層次微縮實物模型 × 雙向 6 艘穿梭客輪</div>
     </div>
 
-    <!-- 四星區膠囊選單 -->
-    <div class="capsule-nav">
-      <button class="capsule-btn active" style="--theme-color:#ffbe0b; --glow-color:rgba(255,190,11,0.6);" onclick="selectSector(0)">
-        <span class="dot"></span> 01 涅布拉・時態要塞星
+    <div class="capsule-bar">
+      <button class="island-capsule active" style="--capsule-bg: #c57b30;" onclick="window.focusIsland(0)">
+        <span class="capsule-dot"></span> 01 南竿・涅布拉時態島
       </button>
-      <button class="capsule-btn" style="--theme-color:#00ff88; --glow-color:rgba(0,255,136,0.6);" onclick="selectSector(1)">
-        <span class="dot"></span> 02 賽博・排毒語塊環礁
+      <button class="island-capsule" style="--capsule-bg: #586e33;" onclick="window.focusIsland(1)">
+        <span class="capsule-dot"></span> 02 北竿・芹壁排毒語塊島
       </button>
-      <button class="capsule-btn" style="--theme-color:#00f0ff; --glow-color:rgba(0,240,255,0.6);" onclick="selectSector(2)">
-        <span class="dot"></span> 03 歐羅拉・全息信標星
+      <button class="island-capsule" style="--capsule-bg: #1c6472;" onclick="window.focusIsland(2)">
+        <span class="capsule-dot"></span> 03 東引・雙島信標語音島
       </button>
-      <button class="capsule-btn" style="--theme-color:#b5179e; --glow-color:rgba(181,23,158,0.6);" onclick="selectSector(3)">
-        <span class="dot"></span> 04 雙子・引力雙星
+      <button class="island-capsule" style="--capsule-bg: #6c4f8f;" onclick="window.focusIsland(3)">
+        <span class="capsule-dot"></span> 04 莒光・東西雙島格位島
       </button>
     </div>
   </header>
 
-  <!-- 3D 浮動標籤容器（由 JS 動態更新 3D 投影座標） -->
-  <div id="hud-container"></div>
-
-  <!-- 右側戰情儀表板面板 -->
-  <aside id="mission-panel">
-    <div class="panel-header">
+  <!-- 右側英檢寫作精進診斷抽屜 -->
+  <aside id="writing-drawer">
+    <div class="drawer-header">
       <div>
-        <span class="panel-tag" id="panel-tag">SECTOR 01 // VERB TITAN</span>
-        <h2 class="panel-title" id="panel-title">涅布拉・時態要塞星</h2>
+        <span class="sector-chip" id="drawer-chip">01 南竿鄉・涅布拉時態要塞</span>
+        <h2 class="drawer-title" id="drawer-title">過去式焦慮 ＆ 雙動詞衝突攻克區</h2>
+        <div class="drawer-landmark" id="drawer-landmark">📍 微縮地標：媽祖原形泰坦巨神像、福澳碼頭、紅白雙吊臂與貨櫃場</div>
       </div>
-      <button class="close-btn" onclick="toggleMissionPanel(false)">×</button>
+      <button class="drawer-close" onclick="window.toggleDrawer(false)">✕</button>
     </div>
 
-    <div class="target-badge" id="panel-target">攻克：過去式焦慮 ＆ to 後方動詞打架</div>
-
-    <div class="section-title">⚠️ 學生作文致命病灶（Stella 實例）</div>
-    <div class="error-card" id="panel-error">
-      • <code>to <strike>bought</strike> a bread</code> (買麵包)<br>
-      • <code>wanted to <strike>got</strike> a good grade</code><br>
-      • <code>outside to <strike>played</strike></code><br>
-      • <code>she <strike>felts</strike> very hungry</code>
+    <div class="card-block card-error">
+      <div class="block-label">⚠️ 學生真實錯句樣本（Stella ＆ 手寫卷）</div>
+      <div id="drawer-errors"></div>
     </div>
 
-    <div class="section-title">🛡️ 外星守門員・核心文法晶片</div>
-    <div class="solution-card" id="panel-rule">
-      <strong>「to 是原形照妖鏡」鐵律：</strong><br>
-      無論前面的時態多麼過去，只要遇到 <code>to / did / didn't / will / can</code>，動詞立刻打回原形！<br>
-      • <code>went to buy some bread</code><br>
-      • <code>wanted to get a good grade</code>
+    <div class="card-block card-audit">
+      <div class="block-label">🔍 資深教師批改盲點審計（Facts Check）</div>
+      <div id="drawer-audit"></div>
     </div>
 
-    <div class="section-title">⚡ 快速精進口訣語音（直接跟讀）</div>
-    <div class="formula-box" id="panel-formula">
-      「一山不容二虎，隨時間變化的動詞只有一個！看到 to，手不要抖，後面一律放原形！」
+    <div class="card-block card-solution">
+      <div class="block-label">🛡️ GEPT 初級滿分改變策略與替代語塊</div>
+      <div id="drawer-solution"></div>
     </div>
 
-    <button class="voice-action-btn" id="voice-speak-btn" onclick="speakCurrentMission()">
-      <div class="audio-wave">
-        <span class="wave-bar"></span>
-        <span class="wave-bar"></span>
-        <span class="wave-bar"></span>
-      </div>
-      <span id="speak-btn-text">聽取星際導師・口訣語音導引</span>
-    </button>
+    <div class="card-block card-chant">
+      <div class="block-label">🔊 30 秒節奏拍手朗讀口訣（Phonological Loop）</div>
+      <div id="drawer-chant"></div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-voice" onclick="window.speakIslandGuidance()">
+        <span>🔊</span> <span id="voice-btn-label">真人語音朗讀教學</span>
+      </button>
+      <button class="btn-quiz" onclick="window.toggleQuizBox()">
+        <span>✍️</span> <span>隨堂改錯快篩挑戰</span>
+      </button>
+    </div>
+
+    <div class="quiz-box" id="quiz-box">
+      <div style="font-size:12px; font-weight:800; color:#bae6fd;" id="quiz-question"></div>
+      <div id="quiz-options" style="display:flex; flex-direction:column; gap:6px;"></div>
+      <div id="quiz-feedback" style="font-size:11.5px; font-weight:700; margin-top:2px;"></div>
+    </div>
   </aside>
 
-  <!-- 底部視角與效果控制列 -->
+  <!-- 底部工具列 -->
   <footer>
-    <button class="tool-btn active" id="btn-holo-grid" onclick="toggleHoloGrid()">
-      🌐 全息量子星海波浪
+    <button class="hud-tool active" id="btn-wave-chart" onclick="window.cycleChartBlend()">
+      🗺️ 海圖波浪：高融合 (100%)
     </button>
-    <button class="tool-btn active" id="btn-fleet" onclick="toggleFleetMode()">
-      🛸 量子雙向穿梭艦隊 (6艘)
+    <button class="hud-tool active" id="btn-ferry-toggle" onclick="window.toggleFerryFleet()">
+      ⛴️ 雙向客輪艦隊 (6艘)
     </button>
-    <button class="tool-btn" id="btn-camera-tour" onclick="startPlanetaryTour()">
-      🎥 星系環繞巡航 (Auto-Tour)
+    <button class="hud-tool" id="btn-orbit-tour" onclick="window.toggleAutoOrbit()">
+      🛸 環島星海巡航
     </button>
-    <button class="tool-btn" onclick="resetView()">
-      🎯 重置視角
+    <button class="hud-tool" onclick="window.setTopChartView()">
+      📐 海圖正俯視
+    </button>
+    <button class="hud-tool" onclick="window.resetOverview()">
+      🎯 全景復位
     </button>
   </footer>
 
-  <script>
-    /* ========================================================
-       1. 資料模型：四星區英檢寫作精進資料庫
-       ======================================================== */
-    const SECTORS_DATA = [
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    /* =========================================================================
+       1. 四鄉五島 × 初級英檢寫作精進完整知識庫
+       ========================================================================= */
+    const ARCHIPELAGO_DATA = [
       {
-        id: 0,
-        name: "01 涅布拉・時態要塞星",
-        code: "NEBULA-01 // VERB CORE",
-        pos: { x: -32, y: 0, z: 12 },
-        color: 0xffbe0b,
-        hexStr: "#ffbe0b",
-        glow: "rgba(255, 190, 11, 0.6)",
-        target: "攻克：過去式焦慮 ＆ to 後方動詞打架",
-        landmark: "原形泰坦神像（持照妖鏡金光燈籠）與量子停泊港",
-        errorHtml: "• <code>to <strike>bought</strike> a bread</code> (買麵包)<br>• <code>wanted to <strike>got</strike> a good grade</code><br>• <code>outside to <strike>played</strike></code><br>• <code>she <strike>felts</strike> very hungry</code>",
-        ruleHtml: "<strong>「to 是原形照妖鏡」鐵律：</strong><br>無論全篇如何過去，只要有 <code>to / did / didn't / will / can</code>，動詞立刻恢復原形！<br>• <code>went to buy some bread</code><br>• <code>wanted to get a good grade</code>",
-        formulaText: "「一山不容二虎，主要動詞只有一個！第二個動作戴上 to 的項圈，動詞立刻變回原形！」",
-        voiceScript: "涅布拉要塞提醒你：初級英檢最忌諱過去式焦慮！看到 to，請立刻切換為原形動詞！跟我唸三次：went to buy, wanted to get, outside to play!"
+        id: 'nangan',
+        name: '01 南竿鄉・涅布拉時態島',
+        subLabel: '動詞守門員・to+V 原形照妖鏡',
+        themeHex: '#c57b30',
+        themeColor: 0xc57b30,
+        pos: { x: -8, y: 0, z: 6 },
+        camOffset: { x: -2, y: 20, z: 28 },
+        lookAt: { x: -8, y: 2.2, z: 6 },
+        title: '攻克：過去式過度類推 ＆ 雙動詞打架',
+        landmark: '📍 微縮地標：新月三山體、媽祖原形巨神像（蓮花座/金光燈籠）、福澳碼頭雙吊臂與貨輪',
+        errors: `
+          • <code>went to the shop to <strike>bought a</strike> bread</code> (圖1)<br>
+          • <code>He wanted to <strike>got</strike> a good grade.</code> (圖3)<br>
+          • <code>brought his dog outside to <strike>played</strike></code> (圖4)<br>
+          • <code>In the class, she <strike>felts</strike> very hungry.</code> (圖1)
+        `,
+        audit: `
+          • <strong>原批改疏漏 1</strong>：圖 1 <code>In the class</code> 未改，「上課中」應為無冠詞 <strong><code>In class</code></strong>。<br>
+          • <strong>原批改疏漏 2</strong>：圖 1 將 <code>her money were empty</code> 改為 <code>her pocket was empty</code> 雖通順，但教導 <strong><code>she ran out of money</code></strong> 更符合學生「錢花光」之原意。
+        `,
+        solution: `
+          • <strong>「一山不容二虎」鐵律</strong>：一個子句只能有一個隨時間變化的動詞。<br>
+          • <strong>「原形照妖鏡」</strong>：遇見 <strong><code>to / did / didn't / will / can</code></strong>，後方動詞一律打回原形：<br>
+          👉 <code>went to <strong>buy some</strong> bread</code>（bread 為不可數名詞）<br>
+          👉 <code>wanted to <strong>get</strong> a good grade</code>
+        `,
+        chant: `🎵 拍手節奏朗讀（唸 3 次讓耳朵記住清脆原形）：\n"Went to BUY! Wanted to GET! Outside to PLAY! Didn't EAT!"`,
+        voiceText: `南竿涅布拉時態要塞提醒您：初級英檢看圖寫作最常見過去式焦慮症！記住一山不容二虎，看到 to 就是原形照妖鏡，後面永遠接原形動詞。請跟著唸三次：went to buy some bread! wanted to get a good grade! took his dog outside to play!`,
+        quiz: {
+          q: '【改錯挑戰】Linda went to the bakery to bought a bread. 哪一個改法完全符合初級英檢滿分標準？',
+          options: [
+            { text: 'A. Linda went to the bakery to buy a bread.', correct: false, msg: '❌ 雖然修正了 to buy，但 bread 是不可數名詞，不能加 a！' },
+            { text: 'B. Linda went to the bakery to buy some bread.', correct: true, msg: '✅ 完全正確！to 後方打回原形 buy，且不可數名詞 bread 搭配 some。' },
+            { text: 'C. Linda go to the bakery to bought some bread.', correct: false, msg: '❌ 過去時間主要動詞應為 went，且 to 後方必須是原形 buy。' }
+          ]
+        }
       },
       {
-        id: 1,
-        name: "02 賽博・排毒語塊環礁",
-        code: "CYBER-02 // CHUNKS LAGOON",
-        pos: { x: 26, y: 0, z: -28 },
-        color: 0x00ff88,
-        hexStr: "#00ff88",
-        glow: "rgba(0, 255, 136, 0.6)",
-        target: "攻克：校園日常中式死譯（Chinglish）",
-        landmark: "語塊水晶生化礁 ＆ 除錯龜形離子要塞",
-        errorHtml: "• <strike>read my self-study and write it</strike> (讀自修寫自修)<br>• <strike>write my assessment to review</strike> (寫評量)<br>• <strike>Chinese grades announced day</strike><br>• <strike>know many friends</strike>",
-        ruleHtml: "<strong>台灣考生排毒專用語塊：</strong><br>• 做自修/習題：<code>do exercises in my workbook</code><br>• 寫考卷：<code>take practice tests / do mock tests</code><br>• 成績公布：<code>the day our test scores came out</code><br>• 認識朋友：<code>make friends</code>",
-        formulaText: "「不可按中文一個字一個字填空！整塊英文打包背：do workbook exercises, make new friends!」",
-        voiceScript: "排毒語塊環礁警報：禁止使用中文逐字英譯！外國人聽不懂 read self-study。請整塊記住：do exercises in my workbook, make new friends!"
+        id: 'beigan',
+        name: '02 北竿鄉・芹壁排毒語塊島',
+        subLabel: '中式直譯排毒・校園高頻語塊',
+        themeHex: '#586e33',
+        themeColor: 0x586e33,
+        pos: { x: 8, y: 0, z: -8 },
+        camOffset: { x: 18, y: 19, z: 12 },
+        lookAt: { x: 8, y: 2.0, z: -8 },
+        title: '攻克：台灣校園詞彙中式死譯 (Chinglish)',
+        landmark: '📍 微縮地標：東北—西南狹長山體、4棟芹壁封火山牆石屋、外海芹壁龜島、高登/大坵/亮島礁',
+        errors: `
+          • <code>read my <strike>classbook</strike> / <strike>self-study</strike> and <strike>write it</strike></code> (圖2 #5)<br>
+          • <code><strike>write my assessment</strike> to review</code> (圖2 #5)<br>
+          • <code><strike>That day was Chinese grades announced day.</strike></code> (圖3)<br>
+          • <code>also can <strike>know</strike> many friends</code> (圖2 #6)
+        `,
+        audit: `
+          • <strong>原批改疏漏 1</strong>：圖 2 第 5 題最後一句 <code>the <strike>improtant</strike> point</code> 拼字錯誤，紅筆漏圈（應為 <strong><code>important</code></strong>）。<br>
+          • <strong>原批改疏漏 2</strong>：圖 2 第 6 題 <code>Every Monday...</code> 表現在習慣，原本用 <strong><code>I go</code></strong> 最自然，紅筆誤插 <code>will I go</code> 反致語序錯亂。
+        `,
+        solution: `
+          • <strong>禁止中文字典逐字填空，直接背誦整塊道地語塊（Chunks）</strong>：<br>
+          👉 寫自修/習作：<strong><code>do exercises in my workbook / study guide</code></strong><br>
+          👉 寫評量複習：<strong><code>do review tests / take practice tests</code></strong><br>
+          👉 成績公布：<strong><code>The teacher gave back our Chinese test papers</code></strong><br>
+          👉 結交新朋友：<strong><code>make many new friends</code></strong>
+        `,
+        chant: `🎵 拍手節奏朗讀（整塊打包進大腦）：\n"Read my TEXTBOOK! Do WORKBOOK exercises! Take PRACTICE tests! Make NEW friends!"`,
+        voiceText: `北竿芹壁排毒語塊島提醒您：千萬別把台灣的寫自修、寫評量逐字翻譯成 write self-study！請把整塊道地英文打包唸三次：do exercises in my workbook! take practice tests to review! make many new friends!`,
+        quiz: {
+          q: '【改錯挑戰】想表達「我會寫自修與評量來準備考試」，下列何者最自然道地？',
+          options: [
+            { text: 'A. I will write my self-study and assessment for the test.', correct: false, msg: '❌ 這是典型中式直譯，母語人士無法理解 write self-study。' },
+            { text: 'B. I will do exercises in my workbook and take practice tests.', correct: true, msg: '✅ 滿分語塊！使用 do exercises in my workbook 與 take practice tests。' },
+            { text: 'C. I will read my classbook and know many friends.', correct: false, msg: '❌ 課本應為 textbook，認識朋友應為 make friends。' }
+          ]
+        }
       },
       {
-        id: 2,
-        name: "03 歐羅拉・全息信標星",
-        code: "AURORA-03 // VOICE BEACON",
-        pos: { x: 34, y: 0, z: 28 },
-        color: 0x00f0ff,
-        hexStr: "#00f0ff",
-        glow: "rgba(0, 240, 255, 0.6)",
-        target: "攻克：語音音律迴路 ＆ 氣音抓漏檢查",
-        landmark: "雙層高亮全息旋轉探照燈塔 ＆ 連星能量長堤",
-        errorHtml: "• <strike>Last Monday, was a special day.</strike> (逗號切斷主詞動詞)<br>• <strike>he exam grade was not better</strike> (所有格搞丟)<br>• <strike>heard a baby cry and dog woof</strike> (漏冠詞與狀聲詞當動詞)",
-        ruleHtml: "<strong>氣音朗讀檢查法 (Whisper Proofreading)：</strong><br>交卷前用氣音唸一遍！嘴巴唸到 <code>he exam</code> 會卡住，耳朵會逼你改成 <code>his exam</code>；唸到 <code>dog woof</code> 會知道要加 <code>his dog was barking</code>！",
-        formulaText: "「眼睛會騙人，耳朵不會！考場最後一分鐘，出聲氣音讀一遍，抓出所有漏掉的 s 和 his！」",
-        voiceScript: "歐羅拉信標啟動！聽覺是英文寫作的超能力。寫完短文，用氣音讀一次，耳朵會立刻抓出 he exam 和 dog woof 的致命疏漏！"
+        id: 'dongyin',
+        name: '03 東引鄉・雙島信標語音島',
+        subLabel: '中柱感恩亭連堤・氣音朗讀抓漏',
+        themeHex: '#1c6472',
+        themeColor: 0x1c6472,
+        pos: { x: 32, y: 0, z: -24 },
+        camOffset: { x: 38, y: 18, z: -4 },
+        lookAt: { x: 32, y: 2.5, z: -24 },
+        title: '攻克：人稱視角跳躍、感官動詞與氣音檢查',
+        landmark: '📍 微縮地標：東引與西引雙島、中柱連島長堤、紅頂感恩亭、歐風純白東引燈塔 360° 雙層旋轉光束',
+        errors: `
+          • <code>The teacher announced <strike>our</strike> Chinese grades... David was sad...</code> (圖3 綠字誤改)<br>
+          • <code>Timmy heard a baby <strike>cried</strike> and dog <strike>woof</strike>.</code> (圖4)<br>
+          • <code><strike>I like the most in my school</strike> is playground.</code> (圖2 #4)
+        `,
+        audit: `
+          • <strong>原批改嚴重視角衝突</strong>：圖 3 綠字改為 <code>announced <strong>our</strong> Chinese grades</code>（第一人稱），下句卻寫 <code>David was sad</code>（第三人稱），違反英檢敘事人稱一致性！<br>
+          • <strong>原批改漏補冠詞</strong>：圖 4 <code>and dog woof</code> 漏補冠詞，且狀聲詞 <code>woof</code> 不宜當正式動詞，應改為 <strong><code>and his dog barking</code></strong>。
+        `,
+        solution: `
+          • <strong>感官動詞鐵律</strong>：<code>hear / see / watch + 受詞 + 原形 V 或 V-ing</code>：<br>
+          👉 <code>Timmy heard a baby <strong>crying</strong> and his dog <strong>barking</strong>.</code><br>
+          • <strong>考前 1 分鐘「氣音朗讀檢查法 (Whisper Proofreading)」</strong>：<br>
+          手指指字用氣音讀出聲，耳朵會立刻抓出漏冠詞 <code>the playground</code> 與人稱跳躍！
+        `,
+        chant: `🎵 拍手節奏朗讀（訓練感官動詞與名詞子句）：\n"Heard a baby CRYING! Heard a dog BARKING! What I like MOST is the playground!"`,
+        voiceText: `東引雙島信標燈塔啟動！寫完作文交卷前，請務必使用氣音朗讀檢查法，手指指著每個字小聲唸出來。注意人稱視角不能從 our 突然跳到 David，感官動詞 heard 後面要接 crying 和 barking！`,
+        quiz: {
+          q: '【改錯挑戰】Timmy heard a baby cried and dog woof. 應如何修正最符合初級英檢敘事規範？',
+          options: [
+            { text: 'A. Timmy heard a baby cried and a dog woofed.', correct: false, msg: '❌ 感官動詞 heard 後方受詞補語不可用過去式 cried / woofed！' },
+            { text: 'B. Timmy heard a baby crying and his dog barking.', correct: true, msg: '✅ 正確！感官動詞後接 V-ing (或原形)，且用正式動詞 bark 取代狀聲詞 woof。' },
+            { text: 'C. Timmy heard a baby to cry and dog bark.', correct: false, msg: '❌ 感官動詞主動語態後方不加 to，且 dog 前方漏了限定詞 his 或 a。' }
+          ]
+        }
       },
       {
-        id: 3,
-        name: "04 雙子・引力雙星",
-        code: "GEMINI-04 // GRAVITY TWINS",
-        pos: { x: -26, y: 0, z: -30 },
-        color: 0xb5179e,
-        hexStr: "#b5179e",
-        glow: "rgba(181, 23, 158, 0.6)",
-        target: "攻克：地方副詞吃掉介系詞 ＆ 代名詞指代",
-        landmark: "雙星引力傳輸門 ＆ 反重力青帆能量港",
-        errorHtml: "• <strike>go to there / play in there</strike><br>• <strike>brought his dog to outside</strike><br>• <strike>eat breakfast on the home</strike><br>• <strike>put on the leash for her dog</strike> (狗是男生的，誤寫成女生的)",
-        ruleHtml: "<strong>地方副詞黑洞定律：</strong><br><code>here / there / home / outside / upstairs</code> 本身就是副詞，前方**禁止加 to / in / at**！<br>• 直接說：<code>go there, play there, go outside, stay home</code>！",
-        formulaText: "「here, there, home, outside 是四大黑洞，看見介系詞直接吞掉！千萬不要寫 go to there！」",
-        voiceScript: "雙子引力警報！there, home, outside 擁有超強引力，會把前面多餘的 to 和 in 吞噬乾淨！大聲複誦：go there! go outside! stay home!"
+        id: 'juguang',
+        name: '04 莒光鄉・東西雙島格位島',
+        subLabel: '地方副詞黑洞・代名詞精準指代',
+        themeHex: '#6c4f8f',
+        themeColor: 0x6c4f8f,
+        pos: { x: -24, y: 0, z: 24 },
+        camOffset: { x: -16, y: 19, z: 44 },
+        lookAt: { x: -24, y: 2.0, z: 24 },
+        title: '攻克：地方副詞贅加介系詞 ＆ 代名詞指代錯置',
+        landmark: '📍 微縮地標：西莒島（青帆港碼頭＋藍頂港務大樓）、東莒島（白犬燈塔＋30m防風白牆＋大埔石屋）',
+        errors: `
+          • <code>didn't eat breakfast <strike>on the</strike> home</code> (圖1)<br>
+          • <code>play <strike>in</strike> there / go <strike>to</strike> there</code> (圖2 #4, #6)<br>
+          • <code>brought his dog <strike>to</strike> outside</code> (圖4)<br>
+          • <code>put on the leash for <strike>her</strike> dog</code> (圖4 綠字誤改！)
+        `,
+        audit: `
+          • <strong>原批改嚴重代名詞誤改</strong>：圖 4 結尾狗明明是 <strong>Timmy 的（<code>his dog</code>）</strong>，原批改卻受前文 <code>baby's mom</code> 干擾誤改為 <strong><code>her dog</code></strong>！且「把牽繩繫回狗身上」道地說法為 <strong><code>put the leash back on his dog</code></strong>。<br>
+          • <strong>所有格與情緒分詞</strong>：圖 3 <code><strike>he</strike> exam grade</code> 應為 <code>his</code>；圖 2 <code>feel happy and <strike>relax</strike></code> 感到放鬆應為 <strong><code>relaxed</code></strong>。
+        `,
+        solution: `
+          • <strong>地方副詞黑洞定律</strong>：<strong><code>here / there / home / outside</code></strong> 內含方向與位置，前方直接吞掉 <code>to / in</code>：<br>
+          👉 <strong><code>go there / play there / go outside / eat at home</code></strong><br>
+          • <strong>代名詞指代檢查</strong>：寫出 <code>his / her / it / they</code> 時，往回畫箭頭確認主人翁是誰！
+        `,
+        chant: `🎵 拍手節奏朗讀（消滅贅加介系詞）：\n"Go THERE! Play THERE! Go OUTSIDE! Stay HOME! Put the leash back on HIS dog!"`,
+        voiceText: `莒光東西雙島提醒您：there、outside、home 是地方副詞黑洞，前面千萬不要加 to 或 in！請大聲唸三次：go there! play there! take his dog outside! 最後別忘了檢查代名詞，Timmy 的狗是 his dog，不是 her dog 喔！`,
+        quiz: {
+          q: '【改錯挑戰】Timmy 帶他的狗去外面玩，並向嬰兒媽媽道歉後把牽繩繫回狗身上。下列何者正確？',
+          options: [
+            { text: 'A. Timmy took his dog to outside and put on the leash for her dog.', correct: false, msg: '❌ outside 前不可加 to，且狗是 Timmy 的 (his dog)，不是媽媽的 (her dog)！' },
+            { text: 'B. Timmy took his dog outside and put the leash back on his dog.', correct: true, msg: '✅ 完全正確！took his dog outside 無贅字，且精準使用 put the leash back on his dog。' },
+            { text: 'C. Timmy went to there with his dog and feel very relax.', correct: false, msg: '❌ there 前不可加 to，且感到放鬆應為 felt very relaxed。' }
+          ]
+        }
       }
     ];
 
-    /* ========================================================
-       2. THREE.JS 核心場景建構
-       ======================================================== */
-    let scene, camera, renderer, controls;
-    let cosmicOceanMesh, oceanGeometry, oceanPosAttr;
-    const oceanGridX = 128, oceanGridZ = 96;
-    let oceanVerticesOrig = [];
-    let isHoloGridActive = true;
-    let isFleetActive = true;
-    let isTouring = false;
-    let tourAngle = 0;
+    /* =========================================================================
+       2. 座標空間與全域變數定義 (World Space: 120 × 90, Grid: 128 × 96)
+       ========================================================================= */
+    const OCEAN_W = 120;
+    const OCEAN_H = 90;
+    const GRID_X = 128;
+    const GRID_Z = 96;
 
-    let quantumFleet = []; // 6艘穿梭艦
-    let islandMeshes = [];
-    let lighthouseBeams = [];
-    let titanAuraGlow;
-    let currentSectorIndex = 0;
+    let scene, camera, renderer, labelRenderer, controls;
+    let oceanMesh, oceanGeo, oceanPosAttr;
+    let chartTexture, plainOceanTexture;
+    let chartBlendMode = 2; // 2: 100% 海圖波浪, 1: 50% 半透明海圖, 0: 純量子深海
 
-    // 航道定義（對應三條外星量子航線，雙向 6 艘）
-    const TRADE_ROUTES = [
-      // 航線 1: 涅布拉 (0) ⇄ 雙子星 (3)
-      { from: SECTORS_DATA[0].pos, to: SECTORS_DATA[3].pos, color: 0xffbe0b },
-      // 航線 2: 涅布拉 (0) ⇄ 歐羅拉 (2)
-      { from: SECTORS_DATA[0].pos, to: SECTORS_DATA[2].pos, color: 0x00f0ff },
-      // 航線 3: 賽博環礁 (1) ⇄ 歐羅拉 (2)
-      { from: SECTORS_DATA[1].pos, to: SECTORS_DATA[2].pos, color: 0x00ff88 }
-    ];
+    const clickableMeshes = [];
+    const animatedLightBeams = [];
+    const animatedGlowSpheres = [];
+    const animatedFoamRings = [];
+    const bidirectionalFerries = [];
 
-    function init() {
-      const container = document.getElementById('webgl-canvas');
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+    let currentIslandIdx = 0;
+    let isFerryVisible = true;
+    let isAutoOrbit = false;
 
-      // 場景
+    // 單一狀態機管理相機平滑飛行 (根除 setInterval 競態問題)
+    const camFlight = {
+      active: false,
+      startTime: 0,
+      duration: 1.15,
+      startPos: new THREE.Vector3(),
+      endPos: new THREE.Vector3(),
+      startTarget: new THREE.Vector3(),
+      endTarget: new THREE.Vector3()
+    };
+
+    /* 嚴格的世界座標 (wx, wz) 轉 海圖 Canvas 像素座標 (px, py) */
+    function worldToCanvas(wx, wz, cw, ch) {
+      // PlaneGeometry rotateX(-PI/2) 後：x ∈ [-W/2, W/2] -> u ∈ [0, 1]；z ∈ [-H/2, H/2] -> v ∈ [1, 0] -> py ∈ [0, ch]
+      const px = ((wx / OCEAN_W) + 0.5) * cw;
+      const py = ((wz / OCEAN_H) + 0.5) * ch;
+      return { x: px, y: py };
+    }
+
+    /* 即時頂點波浪高度函數 (海圖網格與客輪共用同一數學模型，確保相位 100% 同步) */
+    function getWaveHeightAt(x, z, time) {
+      // 計算離最近島嶼中心的距離，岸邊波浪自動衰減避免穿模島嶼沙灘
+      let shoreDamp = 1.0;
+      const islandCenters = [
+        { x: -8, z: 6, r: 12 },   // 南竿
+        { x: 8, z: -8, r: 11 },   // 北竿
+        { x: 2.2, z: -11.2, r: 3.5 }, // 龜島
+        { x: 34, z: -24, r: 9 },  // 東引
+        { x: 26, z: -24, r: 6 },  // 西引
+        { x: -30, z: 23, r: 7.5 },// 西莒
+        { x: -18, z: 25, r: 8 }   // 東莒
+      ];
+      for (const ic of islandCenters) {
+        const d = Math.hypot(x - ic.x, z - ic.z);
+        if (d < ic.r) {
+          shoreDamp = Math.min(shoreDamp, Math.max(0.08, (d / ic.r) * 0.5));
+        }
+      }
+
+      const w1 = Math.sin(x * 0.14 + time * 1.85) * Math.cos(z * 0.12 + time * 1.45) * 0.42;
+      const w2 = Math.sin((x * 0.08 - z * 0.09) + time * 1.3) * 0.28;
+      const w3 = Math.cos(x * 0.22 + z * 0.18 - time * 2.1) * 0.12;
+      return (w1 + w2 + w3) * shoreDamp;
+    }
+
+    /* =========================================================================
+       3. 初始化高階 WebGL 場景
+       ========================================================================= */
+    function initScene() {
+      const container = document.getElementById('webgl-container');
+
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x050814);
-      scene.fog = new THREE.FogExp2(0x050814, 0.007);
+      scene.fog = new THREE.FogExp2(0x061b36, 0.0042);
 
-      // 相機
-      camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
-      camera.position.set(0, 65, 80);
+      camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.5, 450);
+      camera.position.set(0, 56, 74);
 
-      // 渲染器
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(width, height);
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       container.appendChild(renderer.domElement);
 
-      // 控制器
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      // CSS2D 懸浮標籤渲染器
+      labelRenderer = new CSS2DRenderer();
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.domElement.style.position = 'absolute';
+      labelRenderer.domElement.style.inset = '0';
+      labelRenderer.domElement.style.pointerEvents = 'none';
+      labelRenderer.domElement.style.zIndex = '10';
+      container.appendChild(labelRenderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.maxPolarAngle = Math.PI / 2 - 0.02; // 禁止穿透水底
-      controls.minDistance = 20;
-      controls.maxDistance = 180;
-      controls.target.set(0, 0, 0);
+      controls.dampingFactor = 0.06;
+      controls.maxPolarAngle = THREE.MathUtils.degToRad(76);
+      controls.minPolarAngle = THREE.MathUtils.degToRad(12);
+      controls.minDistance = 14;
+      controls.maxDistance = 155;
+      controls.target.set(0, 0, 2);
 
-      // 光照系統
-      setupLighting();
+      setupLights();
+      setupCosmicStarfield();
 
-      // 1. 量子能量海洋 (頂點動態波浪 + 全息星雲紋理)
-      setupCosmicEnergyOcean();
+      // 核心亮點一：128x96 即時頂點波浪 × 海圖紋理融合
+      setupVertexWaveMapOcean();
 
-      // 2. 宇宙星塵粒子背景
-      setupStarfield();
+      // 核心亮點二：五島多層次微縮實物模型地形與地標
+      buildMiniatureDioramaArchipelago();
 
-      // 3. 四大微縮外星島嶼地貌與科幻地標
-      buildAlienWritingArchipelago();
+      // 核心亮點三：雙向航行客輪系統 (6 艘對開立體客輪)
+      buildBidirectionalFerryFleet();
 
-      // 4. 量子穿梭艦隊 (雙向 6 艘，自動偏移軌道與波浪浮動)
-      buildQuantumShuttleFleet();
-
-      // 5. 初始化 3D 浮動 HUD 標籤
-      init3DHUDLabels();
-
-      // 事件監聽
+      // 綁定互動事件
       window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('pointerup', onPointerUpRaycasting);
 
-      // 預設選中 0 號星島
-      selectSector(0, false);
+      // 初始載入第 0 島資料面板
+      updateDrawerUI(0);
 
-      // 開始渲染循環
       animate();
     }
 
-    /* 燈光建置 */
-    function setupLighting() {
-      const ambientLight = new THREE.AmbientLight(0x1a2639, 1.8);
-      scene.add(ambientLight);
+    function setupLights() {
+      const ambient = new THREE.AmbientLight(0xdbeafe, 1.15);
+      scene.add(ambient);
 
-      // 主星恆星光（金色帶藍邊）
-      const sunLight = new THREE.DirectionalLight(0xa5f3fc, 2.0);
-      sunLight.position.set(60, 90, 40);
-      sunLight.castShadow = true;
-      sunLight.shadow.mapSize.width = 2048;
-      sunLight.shadow.mapSize.height = 2048;
-      sunLight.shadow.bias = -0.001;
-      scene.add(sunLight);
+      const hemi = new THREE.HemisphereLight(0x93c5fd, 0x0c335e, 1.1);
+      scene.add(hemi);
 
-      // 輔助深紫色星雲底光
-      const nebulaLight = new THREE.DirectionalLight(0x7c3aed, 1.2);
-      nebulaLight.position.set(-60, 40, -50);
-      scene.add(nebulaLight);
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 2.4);
+      dirLight.position.set(45, 78, 42);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.camera.near = 10;
+      dirLight.shadow.camera.far = 180;
+      dirLight.shadow.camera.left = -62;
+      dirLight.shadow.camera.right = 62;
+      dirLight.shadow.camera.top = 52;
+      dirLight.shadow.camera.bottom = -52;
+      dirLight.shadow.bias = -0.0005;
+      scene.add(dirLight);
     }
 
-    /* 1. 量子能量海（頂點波浪 + 動態全息網格） */
-    function setupCosmicEnergyOcean() {
-      oceanGeometry = new THREE.PlaneGeometry(160, 120, oceanGridX, oceanGridZ);
-      oceanGeometry.rotateX(-Math.PI / 2);
+    function setupCosmicStarfield() {
+      const count = 900;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 320;
+        positions[i + 1] = Math.random() * 95 + 14;
+        positions[i + 2] = (Math.random() - 0.5) * 280;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({ color: 0xbae6fd, size: 0.65, transparent: true, opacity: 0.75 });
+      scene.add(new THREE.Points(geo, mat));
+    }
 
-      oceanPosAttr = oceanGeometry.attributes.position;
-      oceanVerticesOrig = [];
-      for (let i = 0; i < oceanPosAttr.count; i++) {
-        oceanVerticesOrig.push(oceanPosAttr.getY(i));
+    /* =========================================================================
+       4. 亮點一：即時海洋頂點波浪 × 海圖紋理融合 (setupVertexWaveMapOcean)
+       ========================================================================= */
+    function generateSeaChartCanvasTexture(includeChartGraphics = true) {
+      const cw = 2048, ch = 1536;
+      const cvs = document.createElement('canvas');
+      cvs.width = cw;
+      cvs.height = ch;
+      const ctx = cvs.getContext('2d');
+
+      // 1. 深海藍漸層底色 (#0c335e 為核心)
+      const bgGrad = ctx.createRadialGradient(cw * 0.5, ch * 0.5, 80, cw * 0.5, ch * 0.5, cw * 0.52);
+      bgGrad.addColorStop(0, '#164e87');
+      bgGrad.addColorStop(0.55, '#0c335e');
+      bgGrad.addColorStop(0.88, '#082242');
+      bgGrad.addColorStop(1, '#041022');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // 經緯網格線
+      ctx.strokeStyle = 'rgba(147, 197, 253, 0.12)';
+      ctx.lineWidth = 1.5;
+      for (let x = 64; x < cw; x += 64) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch); ctx.stroke();
+      }
+      for (let y = 64; y < ch; y += 64) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke();
       }
 
-      // 生成動態全息網格與星圖紋理
-      const canvas = document.createElement('canvas');
-      canvas.width = 1024;
-      canvas.height = 768;
-      const ctx = canvas.getContext('2d');
+      if (includeChartGraphics) {
+        // 2. 海圖邊框與台灣海峽 / 東海星域圖騰
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(48, 48, cw - 96, ch - 96);
+        ctx.strokeStyle = 'rgba(197, 123, 48, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(58, 58, cw - 116, ch - 116);
 
-      // 底色：深海量子漸層
-      const grad = ctx.createLinearGradient(0, 0, 1024, 768);
-      grad.addColorStop(0, '#040d21');
-      grad.addColorStop(0.5, '#0a1d37');
-      grad.addColorStop(1, '#06132b');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1024, 768);
-
-      // 繪製全息經緯度網格與星雲羅盤線
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < 1024; x += 40) {
+        // 左上角海圖主標題「馬祖・四鄉五島 × 初級英檢寫作星圖」
+        ctx.fillStyle = 'rgba(12, 51, 94, 0.9)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, 768);
+        ctx.roundRect(96, 88, 660, 145, 18);
+        ctx.fill();
         ctx.stroke();
-      }
-      for (let y = 0; y < 768; y += 40) {
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 44px "Noto Sans TC", sans-serif';
+        ctx.fillText('馬祖・四鄉五島 × 外星寫作海圖', 124, 152);
+        ctx.fillStyle = '#fde68a';
+        ctx.font = '700 23px "Noto Sans TC", sans-serif';
+        ctx.fillText('GEPT ELEMENTARY WRITING ARCHIPELAGO CHART', 126, 198);
+
+        // 右下角：精緻海圖羅盤與比例尺
+        const compX = cw - 240, compY = ch - 230;
+        ctx.save();
+        ctx.translate(compX, compY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, 74, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 56, 0, Math.PI * 2); ctx.stroke();
+        // 羅盤十字星芒
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.moveTo(0, -86); ctx.lineTo(14, 0); ctx.lineTo(0, -16); ctx.lineTo(-14, 0); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath(); ctx.moveTo(0, 86); ctx.lineTo(12, 0); ctx.lineTo(-12, 0); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-86, 0); ctx.lineTo(0, -12); ctx.lineTo(0, 12); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(86, 0); ctx.lineTo(0, -12); ctx.lineTo(0, 12); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 26px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('N', 0, -96);
+        ctx.restore();
+
+        // 比例尺
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(1024, y);
+        ctx.moveTo(cw - 360, ch - 95);
+        ctx.lineTo(cw - 120, ch - 95);
+        ctx.moveTo(cw - 360, ch - 105);
+        ctx.lineTo(cw - 360, ch - 85);
+        ctx.moveTo(cw - 240, ch - 103);
+        ctx.lineTo(cw - 240, ch - 87);
+        ctx.moveTo(cw - 120, ch - 105);
+        ctx.lineTo(cw - 120, ch - 85);
         ctx.stroke();
+        ctx.fillStyle = '#e0f2fe';
+        ctx.font = '700 20px "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('0          5          10 海里 (NM)', cw - 240, ch - 115);
+
+        // 海域圖騰文字（東海 / 台灣海峽）
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.25)';
+        ctx.font = '900 36px "Noto Sans TC", sans-serif';
+        ctx.fillText('東 海 星 域  EAST CHINA SEA SECTOR', cw * 0.64, ch * 0.48);
+        ctx.fillText('台 灣 海 峽 航 道  TAIWAN STRAIT', cw * 0.26, ch * 0.36);
+
+        // 3. 繪製三條白色虛線主航道（與 3D 客輪航線座標 100% 同步）
+        const drawRouteLine = (pts, labelText) => {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.lineWidth = 4;
+          ctx.setLineDash([16, 12]);
+          ctx.beginPath();
+          pts.forEach((pt, idx) => {
+            const p = worldToCanvas(pt.x, pt.z, cw, ch);
+            if (idx === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          });
+          ctx.stroke();
+          ctx.restore();
+
+          if (labelText && pts.length >= 2) {
+            const midIdx = Math.floor(pts.length / 2);
+            const pA = worldToCanvas(pts[midIdx - 1].x, pts[midIdx - 1].z, cw, ch);
+            const pB = worldToCanvas(pts[midIdx].x, pts[midIdx].z, cw, ch);
+            ctx.fillStyle = 'rgba(253, 230, 138, 0.92)';
+            ctx.font = '700 20px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(labelText, (pA.x + pB.x) * 0.5 + 24, (pA.y + pB.y) * 0.5 - 12);
+          }
+        };
+
+        // 航道 1: 北竿 ⇄ 東引
+        drawRouteLine([{ x: 10, z: -9 }, { x: 22, z: -16 }, { x: 31, z: -22 }], '北竿 ⇄ 東引航線');
+        // 航道 2: 北竿 ⇄ 南竿福澳 ⇄ 東莒
+        drawRouteLine([{ x: 6, z: -6 }, { x: -4.5, z: 7.5 }, { x: -17, z: 24 }], '北竿 ⇄ 南竿福澳 ⇄ 東莒');
+        // 航道 3: 南竿 ⇄ 西莒 / 東莒
+        drawRouteLine([{ x: -7, z: 8.5 }, { x: -28, z: 22 }, { x: -19, z: 25 }], '南竿 ⇄ 西莒/東莒');
+
+        // 4. 繪製各島海圖等深線光圈與不被 3D 模型遮擋的外引指標線文字
+        const drawIslandCallout = (wx, wz, offsetPx, offsetPy, title, sub, hexColor) => {
+          const center = worldToCanvas(wx, wz, cw, ch);
+          const endX = center.x + offsetPx;
+          const endY = center.y + offsetPy;
+
+          // 島嶼周圍海圖等深虛線圈
+          ctx.save();
+          ctx.strokeStyle = 'rgba(186, 230, 253, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 6]);
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, 115, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // 外引指標折線
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(center.x + (offsetPx > 0 ? 75 : -75), center.y + (offsetPy > 0 ? 45 : -45));
+          ctx.lineTo(endX, endY);
+          ctx.lineTo(endX + (offsetPx > 0 ? 185 : -185), endY);
+          ctx.stroke();
+
+          // 膠囊色票底框
+          const boxW = 240, boxH = 64;
+          const boxX = offsetPx > 0 ? endX : endX - boxW;
+          const boxY = endY - boxH - 6;
+          ctx.fillStyle = hexColor;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxW, boxH, 14);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 24px "Noto Sans TC", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(title, boxX + boxW / 2, boxY + 29);
+          ctx.fillStyle = '#fef08a';
+          ctx.font = '700 16px "Noto Sans TC", sans-serif';
+          ctx.fillText(sub, boxX + boxW / 2, boxY + 52);
+        };
+
+        drawIslandCallout(-8, 6, -210, -85, '南竿鄉 NANGAN', '動詞時態・媽祖福澳', '#c57b30');
+        drawIslandCallout(8, -8, 175, 70, '北竿鄉 BEIGAN', '芹壁石屋・語塊排毒', '#586e33');
+        drawIslandCallout(32, -24, -220, -65, '東引鄉 DONGYIN', '中柱連堤・燈塔語音', '#1c6472');
+        drawIslandCallout(-30, 23, -155, -110, '西莒島 XIJU', '青帆港務・副詞黑洞', '#6c4f8f');
+        drawIslandCallout(-18, 25, 165, 90, '東莒島・莒光鄉', '白犬燈塔・格位指代', '#6c4f8f');
       }
 
-      // 繪製外星全息星盤與航線虛線
-      ctx.strokeStyle = 'rgba(255, 190, 11, 0.35)';
-      ctx.setLineDash([8, 8]);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(512, 384, 180, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(512, 384, 280, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      const tex = new THREE.CanvasTexture(cvs);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      return tex;
+    }
 
-      const mapTexture = new THREE.CanvasTexture(canvas);
-      mapTexture.wrapS = THREE.ClampToEdgeWrapping;
-      mapTexture.wrapT = THREE.ClampToEdgeWrapping;
+    function setupVertexWaveMapOcean() {
+      chartTexture = generateSeaChartCanvasTexture(true);
+      plainOceanTexture = generateSeaChartCanvasTexture(false);
 
-      const oceanMaterial = new THREE.MeshStandardMaterial({
-        map: mapTexture,
-        color: 0x00f0ff,
-        roughness: 0.15,
-        metalness: 0.85,
+      // 邊緣羽化 Alpha 遮罩，使海圖無縫融入無邊際立體深海
+      const alphaCvs = document.createElement('canvas');
+      alphaCvs.width = 512; alphaCvs.height = 512;
+      const aCtx = alphaCvs.getContext('2d');
+      const aGrad = aCtx.createRadialGradient(256, 256, 120, 256, 256, 252);
+      aGrad.addColorStop(0, '#ffffff');
+      aGrad.addColorStop(0.82, '#ffffff');
+      aGrad.addColorStop(1, '#000000');
+      aCtx.fillStyle = aGrad;
+      aCtx.fillRect(0, 0, 512, 512);
+      const alphaTex = new THREE.CanvasTexture(alphaCvs);
+
+      oceanGeo = new THREE.PlaneGeometry(OCEAN_W, OCEAN_H, GRID_X, GRID_Z);
+      oceanGeo.rotateX(-Math.PI / 2);
+      oceanPosAttr = oceanGeo.attributes.position;
+
+      const oceanMat = new THREE.MeshStandardMaterial({
+        map: chartTexture,
+        alphaMap: alphaTex,
         transparent: true,
-        opacity: 0.92,
-        wireframe: false
+        opacity: 0.98,
+        roughness: 0.24,
+        metalness: 0.25
       });
 
-      cosmicOceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
-      cosmicOceanMesh.receiveShadow = true;
-      cosmicOceanMesh.position.y = 0;
-      scene.add(cosmicOceanMesh);
+      oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+      oceanMesh.receiveShadow = true;
+      scene.add(oceanMesh);
+
+      // 底層無邊際深海襯底平面
+      const abyssGeo = new THREE.PlaneGeometry(420, 420);
+      abyssGeo.rotateX(-Math.PI / 2);
+      const abyssMat = new THREE.MeshBasicMaterial({ color: 0x041022 });
+      const abyssMesh = new THREE.Mesh(abyssGeo, abyssMat);
+      abyssMesh.position.y = -1.2;
+      scene.add(abyssMesh);
     }
 
-    // 計算特定位置的即時波浪高度
-    function getWaveHeightAt(x, z, time) {
-      const w1 = Math.sin(x * 0.12 + time * 2.0) * Math.cos(z * 0.1 + time * 1.5) * 0.7;
-      const w2 = Math.sin(x * 0.06 - z * 0.08 + time * 1.2) * 0.5;
-      return w1 + w2;
-    }
+    /* =========================================================================
+       5. 亮點二：五島多層次微縮實物模型地形與地標 (buildMiniatureDioramaArchipelago)
+          每座島嶼皆採用「白色呼吸浪花裙邊 → 金黃沙灘岩岸 → 翠綠微縮草坡 → 森林山脊」四層次工法
+       ========================================================================= */
+    function createFourLayerIslandMound(rx, rz, height, islandIdx) {
+      const moundGroup = new THREE.Group();
 
-    /* 2. 背景宇宙星塵粒子 */
-    function setupStarfield() {
-      const starGeo = new THREE.BufferGeometry();
-      const starCount = 1200;
-      const starPos = new Float32Array(starCount * 3);
-      for (let i = 0; i < starCount * 3; i += 3) {
-        starPos[i] = (Math.random() - 0.5) * 300;
-        starPos[i + 1] = Math.random() * 80 + 10;
-        starPos[i + 2] = (Math.random() - 0.5) * 300;
-      }
-      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-      const starMat = new THREE.PointsMaterial({
-        color: 0x38bdf8,
-        size: 0.7,
-        transparent: true,
-        opacity: 0.8
-      });
-      const starfield = new THREE.Points(starGeo, starMat);
-      scene.add(starfield);
-    }
-
-    /* 3. 建立四大微縮外星島嶼與專屬科幻地標 */
-    function buildAlienWritingArchipelago() {
-      // 01 涅布拉星（新月形山脊 + 原形泰坦神像 + 量子貨櫃港）
-      buildNebulaPrimeIsland();
-
-      // 02 賽博環礁（狹長島 + 龜形生化島礁 + 水晶聚落）
-      buildCyberLagoonIsland();
-
-      // 03 歐羅拉信標星（雙峰峽谷 + 旋轉全息雙層燈塔 + 連星長堤）
-      buildAuroraBeaconIsland();
-
-      // 04 雙子星（西雙子 + 東雙子 + 引力離子防護門）
-      buildGeminiTwinsIslands();
-    }
-
-    /* 島嶼地形多層次生成輔助函數 (浪花圈 -> 金屬紫岩岸 -> 生化翠綠坡 -> 晶體山脊) */
-    function createAlienTerrain(radiusX, radiusZ, height, mainColor, rockColor) {
-      const group = new THREE.Group();
-
-      // 底層發光生化浪花圈 (白色/能量青色光圈)
-      const foamGeo = new THREE.RingGeometry(radiusX * 0.9, radiusX * 1.25, 32);
+      // 第 1 層：白色呼吸浪花裙邊 (Breathing White Foam Skirt)
+      const foamGeo = new THREE.RingGeometry(Math.min(rx, rz) * 0.88, Math.max(rx, rz) * 1.18, 36);
       foamGeo.rotateX(-Math.PI / 2);
       const foamMat = new THREE.MeshBasicMaterial({
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.58,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const foamRing = new THREE.Mesh(foamGeo, foamMat);
+      foamRing.scale.set(rx / Math.max(rx, rz), 1, rz / Math.max(rx, rz));
+      foamRing.position.y = 0.08;
+      moundGroup.add(foamRing);
+      animatedFoamRings.push({ mesh: foamRing, baseScaleX: foamRing.scale.x, baseScaleZ: foamRing.scale.z, phase: Math.random() * 6 });
+
+      // 第 2 層：金黃沙灘與花崗岩岸 (Golden Sand & Granite Coast)
+      const sandGeo = new THREE.CylinderGeometry(0.88, 1.0, height * 0.28, 24);
+      sandGeo.scale(rx, 1, rz);
+      const sandMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.85, metalness: 0.08, flatShading: true });
+      const sandMesh = new THREE.Mesh(sandGeo, sandMat);
+      sandMesh.position.y = height * 0.14;
+      sandMesh.castShadow = true;
+      sandMesh.receiveShadow = true;
+      sandMesh.userData = { islandIdx };
+      clickableMeshes.push(sandMesh);
+      moundGroup.add(sandMesh);
+
+      // 第 3 層：翠綠微縮草坡 (Lush Miniature Grass Slope)
+      const grassGeo = new THREE.CylinderGeometry(0.65, 0.87, height * 0.36, 20);
+      grassGeo.scale(rx, 1, rz);
+      const grassMat = new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.78, metalness: 0.05, flatShading: true });
+      const grassMesh = new THREE.Mesh(grassGeo, grassMat);
+      grassMesh.position.y = height * 0.28 + height * 0.18;
+      grassMesh.castShadow = true;
+      grassMesh.receiveShadow = true;
+      grassMesh.userData = { islandIdx };
+      clickableMeshes.push(grassMesh);
+      moundGroup.add(grassMesh);
+
+      // 第 4 層：森林山脊 (Deep Forest Mountain Ridge)
+      const ridgeGeo = new THREE.ConeGeometry(0.64, height * 0.45, 16);
+      ridgeGeo.scale(rx, 1, rz);
+      const ridgeMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.82, flatShading: true });
+      const ridgeMesh = new THREE.Mesh(ridgeGeo, ridgeMat);
+      ridgeMesh.position.y = height * 0.64 + height * 0.225;
+      ridgeMesh.castShadow = true;
+      ridgeMesh.receiveShadow = true;
+      ridgeMesh.userData = { islandIdx };
+      clickableMeshes.push(ridgeMesh);
+      moundGroup.add(ridgeMesh);
+
+      return moundGroup;
+    }
+
+    /* 芹壁/大埔傳統花崗岩石屋（含朱紅起翹封火山牆＋屋頂防颱壓瓦石） */
+    function createMatsuGraniteHouse(scale = 1.0) {
+      const hGroup = new THREE.Group();
+      const w = 1.1 * scale, h = 0.85 * scale, d = 0.9 * scale;
+
+      // 花崗岩牆體
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color: 0xb8aba0, roughness: 0.92 })
+      );
+      wall.position.y = h / 2;
+      wall.castShadow = true;
+      hGroup.add(wall);
+
+      // 朱紅起翹封火山牆 (兩側微翹山牆)
+      const gableMat = new THREE.MeshStandardMaterial({ color: 0xc83e2b, roughness: 0.65 });
+      const gableGeo = new THREE.BoxGeometry(0.1 * scale, h * 0.65, d * 1.06);
+      const leftGable = new THREE.Mesh(gableGeo, gableMat);
+      leftGable.position.set(-w / 2 - 0.02, h * 0.92, 0);
+      leftGable.rotation.z = 0.16;
+      const rightGable = new THREE.Mesh(gableGeo, gableMat);
+      rightGable.position.set(w / 2 + 0.02, h * 0.92, 0);
+      rightGable.rotation.z = -0.16;
+      hGroup.add(leftGable, rightGable);
+
+      // 雙坡紅瓦屋頂
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(w * 0.76, 0.42 * scale, 4),
+        new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.78 })
+      );
+      roof.rotation.y = Math.PI / 4;
+      roof.position.y = h + 0.21 * scale;
+      hGroup.add(roof);
+
+      // 屋頂防颱壓瓦石 (4 顆白色/灰色花崗岩塊)
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.9 });
+      for (let i = 0; i < 4; i++) {
+        const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.08 * scale), stoneMat);
+        stone.position.set((i % 2 === 0 ? -0.22 : 0.22) * scale, h + 0.28 * scale, (i < 2 ? -0.18 : 0.18) * scale);
+        hGroup.add(stone);
+      }
+      return hGroup;
+    }
+
+    /* 掛載 CSS2D 懸浮島嶼名牌 */
+    function attachIslandHUDLabel(parentGroup, title, subText, pillColorHex, yHeight, islandIdx) {
+      const div = document.createElement('div');
+      div.className = 'diorama-label';
+      div.style.setProperty('--pill-bg', pillColorHex);
+      div.innerHTML = `
+        <div class="diorama-pill">${title}</div>
+        <div class="diorama-sub-pill">${subText}</div>
+        <div class="diorama-stem"></div>
+      `;
+      div.onclick = (e) => {
+        e.stopPropagation();
+        window.focusIsland(islandIdx);
+      };
+      const labelObj = new CSS2DObject(div);
+      labelObj.position.set(0, yHeight, 0);
+      parentGroup.add(labelObj);
+    }
+
+    function buildMiniatureDioramaArchipelago() {
+      // =========================================================================
+      // 【01 南竿島】：新月形三山體、西側山巔媽祖巨神像、中央福澳灣碼頭/吊臂/貨櫃/貨輪
+      // =========================================================================
+      const nanganGroup = new THREE.Group();
+      nanganGroup.position.set(-8, 0, 6);
+
+      // 新月形三山體微縮地形 (西山峰、中央灣、東山峰)
+      const ngWestMound = createFourLayerIslandMound(5.2, 4.6, 5.2, 0);
+      ngWestMound.position.set(-3.8, 0, -0.5);
+      const ngCenterMound = createFourLayerIslandMound(5.8, 4.2, 3.6, 0);
+      ngCenterMound.position.set(0, 0, 1.2);
+      const ngEastMound = createFourLayerIslandMound(4.8, 4.5, 4.8, 0);
+      ngEastMound.position.set(4.0, 0, -0.6);
+      nanganGroup.add(ngWestMound, ngCenterMound, ngEastMound);
+
+      // 西側山巔：媽祖原形泰坦巨神像（石階、粉紅蓮花座、金冠、高亮度呼吸金光燈籠與光暈球）
+      const mazuGroup = new THREE.Group();
+      mazuGroup.position.set(-3.8, 4.6, -0.5);
+
+      // 參道石階
+      const stairMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.6, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.85 })
+      );
+      stairMesh.position.set(0, -0.2, 1.1);
+      stairMesh.rotation.x = 0.35;
+      mazuGroup.add(stairMesh);
+
+      // 粉紅蓮花座
+      const lotusMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.15, 0.85, 0.55, 16),
+        new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4, metalness: 0.2 })
+      );
+      lotusMesh.position.y = 0.25;
+      mazuGroup.add(lotusMesh);
+
+      // 純白神像法相軀幹
+      const statueBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.72, 2.5, 16),
+        new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.35, metalness: 0.15 })
+      );
+      statueBody.position.y = 1.65;
+      statueBody.castShadow = true;
+      mazuGroup.add(statueBody);
+
+      // 媽祖金冠
+      const crown = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.32, 0.55, 12),
+        new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.15 })
+      );
+      crown.position.y = 3.1;
+      mazuGroup.add(crown);
+
+      // 手持高亮度呼吸金光燈籠與光暈球
+      const lanternCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.34, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xfffbeb })
+      );
+      lanternCore.position.set(0.85, 2.1, 0.55);
+      mazuGroup.add(lanternCore);
+
+      const lanternHalo = new THREE.Mesh(
+        new THREE.SphereGeometry(0.75, 16, 16),
+        new THREE.MeshBasicMaterial({
+          color: 0xf59e0b,
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      lanternHalo.position.copy(lanternCore.position);
+      mazuGroup.add(lanternHalo);
+      animatedGlowSpheres.push(lanternHalo);
+
+      nanganGroup.add(mazuGroup);
+
+      // 中央福澳灣：福澳碼頭、港務倉儲大樓、紅白雙座裝卸吊臂、彩色微縮貨櫃場與靠泊貨輪
+      const fuaoPort = new THREE.Group();
+      fuaoPort.position.set(1.2, 0.45, 3.8);
+
+      // 混凝土碼頭平台
+      const pierSlab = new THREE.Mesh(
+        new THREE.BoxGeometry(5.6, 0.45, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75 })
+      );
+      fuaoPort.add(pierSlab);
+
+      // 港務倉儲大樓
+      const portBuilding = new THREE.Mesh(
+        new THREE.BoxGeometry(1.7, 1.1, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 })
+      );
+      portBuilding.position.set(-1.6, 0.75, -0.4);
+      const portRoof = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.18, 1.2),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+      );
+      portRoof.position.set(-1.6, 1.38, -0.4);
+      fuaoPort.add(portBuilding, portRoof);
+
+      // 紅白雙座裝卸吊臂
+      for (let c = 0; c < 2; c++) {
+        const crane = new THREE.Group();
+        crane.position.set(0.3 + c * 1.4, 0.22, 0.6);
+        const legMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+        const boomMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.8, 0.22), legMat);
+        tower.position.y = 0.9;
+        const boom = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 1.9), boomMat);
+        boom.position.set(0, 1.75, 0.55);
+        boom.rotation.x = -0.2;
+        crane.add(tower, boom);
+        fuaoPort.add(crane);
+      }
+
+      // 彩色微縮貨櫃場
+      const containerColors = [0xf59e0b, 0xef4444, 0x10b981, 0x3b82f6];
+      for (let i = 0; i < 6; i++) {
+        const cMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.65, 0.38, 0.38),
+          new THREE.MeshStandardMaterial({ color: containerColors[i % 4], roughness: 0.5 })
+        );
+        cMesh.position.set(0.2 + (i % 3) * 0.72, 0.42 + Math.floor(i / 3) * 0.4, -0.35);
+        fuaoPort.add(cMesh);
+      }
+
+      // 靠泊貨輪
+      const berthedShip = new THREE.Group();
+      berthedShip.position.set(1.1, -0.1, 2.0);
+      const bHull = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 0.45, 0.82),
+        new THREE.MeshStandardMaterial({ color: 0x1e3a8a })
+      );
+      const bBridge = new THREE.Mesh(
+        new THREE.BoxGeometry(0.55, 0.5, 0.68),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      bBridge.position.set(-0.7, 0.45, 0);
+      berthedShip.add(bHull, bBridge);
+      fuaoPort.add(berthedShip);
+
+      nanganGroup.add(fuaoPort);
+      attachIslandHUDLabel(nanganGroup, '01 南竿島・涅布拉時態要塞', '媽祖巨神像 × 福澳港・to+V 原形照妖鏡', '#c57b30', 9.2, 0);
+      scene.add(nanganGroup);
+
+      // =========================================================================
+      // 【02 北竿島】：東北—西南狹長島體、4棟芹壁封火山牆石屋、立體芹壁龜島、高登/大坵/亮島礁
+      // =========================================================================
+      const beiganGroup = new THREE.Group();
+      beiganGroup.position.set(8, 0, -8);
+
+      const bgMainMound = createFourLayerIslandMound(8.2, 4.2, 5.6, 1);
+      bgMainMound.rotation.y = Math.PI / 5; // 東北—西南走向
+      beiganGroup.add(bgMainMound);
+
+      // 山坡層疊 4 棟芹壁傳統花崗岩石屋
+      const houseOffsets = [
+        { x: -2.2, y: 2.1, z: -1.1 },
+        { x: -0.6, y: 2.6, z: -1.4 },
+        { x: 1.1, y: 2.3, z: -0.9 },
+        { x: -1.4, y: 3.3, z: -0.2 }
+      ];
+      houseOffsets.forEach(pos => {
+        const house = createMatsuGraniteHouse(0.92);
+        house.position.set(pos.x, pos.y, pos.z);
+        house.rotation.y = -0.35;
+        beiganGroup.add(house);
+      });
+
+      // 外海立體雕塑：芹壁龜島（含龜首、龜甲山脊與專屬浪花圈）
+      const turtleIsland = new THREE.Group();
+      turtleIsland.position.set(-5.8, 0, -3.2);
+
+      const tFoamGeo = new THREE.RingGeometry(1.6, 2.25, 28);
+      tFoamGeo.rotateX(-Math.PI / 2);
+      const tFoam = new THREE.Mesh(
+        tFoamGeo,
+        new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.65, side: THREE.DoubleSide })
+      );
+      tFoam.position.y = 0.08;
+      turtleIsland.add(tFoam);
+      animatedFoamRings.push({ mesh: tFoam, baseScaleX: 1, baseScaleZ: 1, phase: 1.5 });
+
+      // 龜甲山脊
+      const shellMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.55, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 0.78, flatShading: true })
+      );
+      shellMesh.scale.set(1.25, 0.85, 0.95);
+      turtleIsland.add(shellMesh);
+
+      // 龜首
+      const headMesh = new THREE.Mesh(
+        new THREE.ConeGeometry(0.48, 1.1, 8),
+        new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.8, flatShading: true })
+      );
+      headMesh.rotation.z = Math.PI / 2.3;
+      headMesh.position.set(-1.95, 0.42, 0);
+      turtleIsland.add(headMesh);
+      beiganGroup.add(turtleIsland);
+
+      // 附屬微縮島礁：大坵島、高登島、亮島
+      const daqiuIslet = createFourLayerIslandMound(2.3, 1.8, 2.2, 1);
+      daqiuIslet.position.set(-6.5, 0, 2.5);
+      const gaodengIslet = createFourLayerIslandMound(2.6, 2.0, 2.5, 1);
+      gaodengIslet.position.set(7.5, 0, -5.5);
+      const liangdaoIslet = createFourLayerIslandMound(1.9, 1.5, 2.0, 1);
+      liangdaoIslet.position.set(13.5, 0, -10.5);
+      beiganGroup.add(daqiuIslet, gaodengIslet, liangdaoIslet);
+
+      attachIslandHUDLabel(beiganGroup, '02 北竿島・芹壁排毒語塊環礁', '芹壁石屋 × 龜島・消滅中式直譯 Chinglish', '#586e33', 7.8, 1);
+      scene.add(beiganGroup);
+
+      // =========================================================================
+      // 【03 東引島】：中柱連島長堤＋紅頂感恩亭串聯東引與西引雙島；歐風東引燈塔＋360度雙層光束
+      // =========================================================================
+      const dongyinGroup = new THREE.Group();
+      dongyinGroup.position.set(32, 0, -24);
+
+      // 東引本島 (東側) 與 西引島 (西側)
+      const dyEastIsland = createFourLayerIslandMound(6.2, 4.6, 5.8, 2);
+      dyEastIsland.position.set(3.6, 0, 0);
+      const xyWestIsland = createFourLayerIslandMound(4.6, 3.8, 4.4, 2);
+      xyWestIsland.position.set(-5.6, 0, 0.6);
+      dongyinGroup.add(dyEastIsland, xyWestIsland);
+
+      // 中柱連島長堤與紅頂感恩亭
+      const causeway = new THREE.Mesh(
+        new THREE.BoxGeometry(5.6, 0.55, 1.15),
+        new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.7 })
+      );
+      causeway.position.set(-1.2, 0.35, 0.3);
+      dongyinGroup.add(causeway);
+
+      // 長堤中央：紅頂感恩亭
+      const pavilion = new THREE.Group();
+      pavilion.position.set(-1.2, 0.65, 0.3);
+      const pavBase = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.65, 0.95),
+        new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
+      );
+      pavBase.position.y = 0.32;
+      const pavRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(0.95, 0.55, 4),
+        new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 })
+      );
+      pavRoof.rotation.y = Math.PI / 4;
+      pavRoof.position.y = 0.9;
+      pavilion.add(pavBase, pavRoof);
+      dongyinGroup.add(pavilion);
+
+      // 東側峭壁：18世紀歐風純白東引燈塔、紅色鑄鐵圓頂、英式白牆房舍與 360 度雙層旋轉光束
+      const lighthouseComplex = new THREE.Group();
+      lighthouseComplex.position.set(6.2, 3.8, -0.5);
+
+      // 英式白牆附屬房舍
+      const britHouse = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 0.75, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+      );
+      britHouse.position.set(-1.3, 0.35, 0.4);
+      const britRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(0.95, 0.4, 4),
+        new THREE.MeshStandardMaterial({ color: 0xb91c1c })
+      );
+      britRoof.rotation.y = Math.PI / 4;
+      britRoof.position.set(-1.3, 0.92, 0.4);
+      lighthouseComplex.add(britHouse, britRoof);
+
+      // 純白燈塔塔身
+      const dyTower = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.68, 2.8, 20),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+      );
+      dyTower.position.y = 1.4;
+      dyTower.castShadow = true;
+      lighthouseComplex.add(dyTower);
+
+      // 紅色鑄鐵圓頂
+      const redDome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.48, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5, roughness: 0.3 })
+      );
+      redDome.position.y = 2.85;
+      lighthouseComplex.add(redDome);
+
+      // 【關鍵座標除錯修復】燈芯原點 Pivot Group：圓錐頂點對齊 (0,0,0) 進行 360 度公轉
+      const dyBeaconPivot = new THREE.Group();
+      dyBeaconPivot.position.set(0, 2.65, 0);
+
+      const innerLen = 14;
+      const innerConeGeo = new THREE.ConeGeometry(1.6, innerLen, 20, 1, true);
+      innerConeGeo.translate(0, -innerLen / 2, 0); // 將錐頂移至 Pivot 原點 (0,0,0)
+      innerConeGeo.rotateX(Math.PI / 2);
+
+      const innerBeamMat = new THREE.MeshBasicMaterial({
+        color: 0xfffbeb,
+        transparent: true,
+        opacity: 0.52,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const outerLen = 18;
+      const outerConeGeo = new THREE.ConeGeometry(3.2, outerLen, 20, 1, true);
+      outerConeGeo.translate(0, -outerLen / 2, 0);
+      outerConeGeo.rotateX(Math.PI / 2);
+
+      const outerBeamMat = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         transparent: true,
-        opacity: 0.45,
-        side: THREE.DoubleSide
+        opacity: 0.24,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       });
-      const foam = new THREE.Mesh(foamGeo, foamMat);
-      foam.position.y = 0.05;
-      group.add(foam);
 
-      // 下層：暗色金屬岩岸 (黏土/微縮質感)
-      const baseGeo = new THREE.CylinderGeometry(radiusX * 0.85, radiusX, height * 0.35, 18);
-      const baseMat = new THREE.MeshStandardMaterial({
-        color: rockColor,
-        roughness: 0.8,
-        metalness: 0.3,
-        flatShading: true
-      });
-      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-      baseMesh.position.y = height * 0.17;
-      baseMesh.castShadow = true;
-      baseMesh.receiveShadow = true;
-      group.add(baseMesh);
+      const dyBeamInner = new THREE.Mesh(innerConeGeo, innerBeamMat);
+      const dyBeamOuter = new THREE.Mesh(outerConeGeo, outerBeamMat);
+      dyBeaconPivot.add(dyBeamInner, dyBeamOuter);
+      lighthouseComplex.add(dyBeaconPivot);
+      animatedLightBeams.push({ pivot: dyBeaconPivot, speed: 0.022 });
 
-      // 上層：生化異星草坡與山脊
-      const topGeo = new THREE.ConeGeometry(radiusX * 0.8, height * 0.7, 18);
-      const topMat = new THREE.MeshStandardMaterial({
-        color: mainColor,
-        roughness: 0.6,
-        metalness: 0.4,
-        flatShading: true
-      });
-      const topMesh = new THREE.Mesh(topGeo, topMat);
-      topMesh.position.y = height * 0.35 + (height * 0.7) / 2;
-      topMesh.castShadow = true;
-      topMesh.receiveShadow = true;
-      group.add(topMesh);
+      dongyinGroup.add(lighthouseComplex);
+      attachIslandHUDLabel(dongyinGroup, '03 東引雙島・全息語音信標', '中柱感恩亭 × 東引燈塔・氣音朗讀檢查法', '#1c6472', 8.6, 2);
+      scene.add(dongyinGroup);
 
-      return group;
-    }
+      // =========================================================================
+      // 【04 莒光雙島（西莒島・東莒島）】：左下角兩座獨立微縮島嶼
+      // =========================================================================
+      const juguangGroup = new THREE.Group();
+      juguangGroup.position.set(-24, 0, 24);
 
-    /* 【01 涅布拉・時態要塞星】 */
-    function buildNebulaPrimeIsland() {
-      const center = SECTORS_DATA[0].pos;
-      const island = new THREE.Group();
-      island.position.set(center.x, center.y, center.z);
+      // (A) 西莒島 (相對座標 -6, 0, -1)：青帆港碼頭 與 藍頂港務行政大樓
+      const xijuIsland = createFourLayerIslandMound(5.0, 4.4, 4.5, 3);
+      xijuIsland.position.set(-6.0, 0, -1.0);
+      juguangGroup.add(xijuIsland);
 
-      // 主山體
-      const terrain = createAlienTerrain(12, 10, 8, 0x1e3a5f, 0x0f172a);
-      island.add(terrain);
+      const qingfanPier = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.4, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+      );
+      qingfanPier.position.set(-4.2, 0.35, 1.8);
+      const blueTopAdmin = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4, 1.0, 0.95),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+      );
+      blueTopAdmin.position.set(-4.8, 0.95, 1.5);
+      const blueRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(1.05, 0.45, 4),
+        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 })
+      );
+      blueRoof.rotation.y = Math.PI / 4;
+      blueRoof.position.set(-4.8, 1.65, 1.5);
+      juguangGroup.add(qingfanPier, blueTopAdmin, blueRoof);
 
-      // 地標 1：原形泰坦神像（手持照妖鏡金色光球）
-      const titanGroup = new THREE.Group();
-      titanGroup.position.set(-3, 8.5, -1);
+      // (B) 東莒島 (相對座標 +6, 0, +1)：白犬燈塔（發光燈芯、金色光暈球、雙向光束、30公尺防風白牆）＋大埔聚落石屋
+      const dongjuIsland = createFourLayerIslandMound(5.6, 4.8, 4.9, 3);
+      dongjuIsland.position.set(6.0, 0, 1.0);
+      juguangGroup.add(dongjuIsland);
 
-      // 蓮花基座
-      const baseGeo = new THREE.CylinderGeometry(1.5, 2, 0.8, 8);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0xffbe0b, metalness: 0.7, roughness: 0.2 });
-      titanGroup.add(new THREE.Mesh(baseGeo, baseMat));
+      const baiquanGroup = new THREE.Group();
+      baiquanGroup.position.set(7.5, 3.8, -0.4);
 
-      // 泰坦軀幹 (極簡科幻風格巨神雕像)
-      const bodyGeo = new THREE.BoxGeometry(1.2, 3.2, 0.8);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 });
-      const titanBody = new THREE.Mesh(bodyGeo, bodyMat);
-      titanBody.position.y = 2;
-      titanGroup.add(titanBody);
+      // 30 公尺防風白牆 (連接塔身與房舍的特色白牆)
+      const windWall = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 0.55, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+      );
+      windWall.position.set(-1.3, 0.28, 0.2);
+      baiquanGroup.add(windWall);
 
-      // 手持原形照妖鏡光球 (高亮度發光金球)
-      const lanternGeo = new THREE.SphereGeometry(0.7, 16, 16);
-      const lanternMat = new THREE.MeshBasicMaterial({ color: 0xffbe0b });
-      const titanLantern = new THREE.Mesh(lanternGeo, lanternMat);
-      titanLantern.position.set(1.4, 3.2, 0.6);
-      titanGroup.add(titanLantern);
+      // 白犬燈塔塔身
+      const djTower = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.58, 2.5, 18),
+        new THREE.MeshStandardMaterial({ color: 0xfefefe, roughness: 0.35 })
+      );
+      djTower.position.y = 1.25;
+      djTower.castShadow = true;
+      baiquanGroup.add(djTower);
 
-      // 光球光暈
-      const glowGeo = new THREE.SphereGeometry(1.3, 16, 16);
-      const glowMat = new THREE.MeshBasicMaterial({ color: 0xffe600, transparent: true, opacity: 0.35 });
-      titanAuraGlow = new THREE.Mesh(glowGeo, glowMat);
-      titanAuraGlow.position.copy(titanLantern.position);
-      titanGroup.add(titanAuraGlow);
+      // 高亮度發光燈芯與金色光暈球
+      const djCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xfffbeb })
+      );
+      djCore.position.y = 2.65;
+      const djHalo = new THREE.Mesh(
+        new THREE.SphereGeometry(0.68, 16, 16),
+        new THREE.MeshBasicMaterial({
+          color: 0xfbbf24,
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      djHalo.position.y = 2.65;
+      baiquanGroup.add(djCore, djHalo);
+      animatedGlowSpheres.push(djHalo);
 
-      island.add(titanGroup);
-
-      // 地標 2：微縮量子碼頭與貨櫃場（對應福澳港）
-      const dockGeo = new THREE.BoxGeometry(6, 0.5, 4);
-      const dockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
-      const dock = new THREE.Mesh(dockGeo, dockMat);
-      dock.position.set(4, 0.4, 4);
-      island.add(dock);
-
-      // 微縮能量貨櫃塊 (金、青、洋紅)
-      const boxColors = [0xffbe0b, 0x00f0ff, 0xf72585];
-      for (let i = 0; i < 5; i++) {
-        const boxGeo = new THREE.BoxGeometry(0.8, 0.6, 1.2);
-        const boxMat = new THREE.MeshStandardMaterial({ color: boxColors[i % 3] });
-        const box = new THREE.Mesh(boxGeo, boxMat);
-        box.position.set(2.5 + (i % 3) * 1.1, 0.9, 3 + Math.floor(i / 3) * 1.4);
-        island.add(box);
-      }
-
-      scene.add(island);
-      islandMeshes.push(island);
-    }
-
-    /* 【02 賽博・排毒語塊環礁】 */
-    function buildCyberLagoonIsland() {
-      const center = SECTORS_DATA[1].pos;
-      const island = new THREE.Group();
-      island.position.set(center.x, center.y, center.z);
-
-      // 狹長山體
-      const terrain = createAlienTerrain(14, 7, 7, 0x064e3b, 0x022c22);
-      terrain.scale.set(1.4, 1, 0.7);
-      island.add(terrain);
-
-      // 水晶石屋聚落（對應芹壁花崗岩石屋）
-      for (let i = 0; i < 4; i++) {
-        const houseGeo = new THREE.BoxGeometry(1.4, 1.2, 1.2);
-        const houseMat = new THREE.MeshStandardMaterial({
-          color: 0x00ff88,
-          metalness: 0.6,
-          roughness: 0.3,
-          wireframe: false
-        });
-        const house = new THREE.Mesh(houseGeo, houseMat);
-        house.position.set(-3 + i * 2.2, 3.5 + (i % 2) * 0.8, 1);
-        island.add(house);
-      }
-
-      // 芹壁龜島 轉化為：立體除錯生化龜島
-      const turtleGroup = new THREE.Group();
-      turtleGroup.position.set(0, 0.2, 8);
-      const shellGeo = new THREE.SphereGeometry(2.2, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-      const shellMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.4, flatShading: true });
-      const shell = new THREE.Mesh(shellGeo, shellMat);
-      turtleGroup.add(shell);
-
-      // 專屬龜島浪花光圈
-      const tFoamGeo = new THREE.RingGeometry(2.4, 3.2, 24);
-      tFoamGeo.rotateX(-Math.PI / 2);
-      const tFoam = new THREE.Mesh(tFoamGeo, new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-      turtleGroup.add(tFoam);
-
-      island.add(turtleGroup);
-
-      scene.add(island);
-      islandMeshes.push(island);
-    }
-
-    /* 【03 歐羅拉・全息信標星】 */
-    function buildAuroraBeaconIsland() {
-      const center = SECTORS_DATA[2].pos;
-      const island = new THREE.Group();
-      island.position.set(center.x, center.y, center.z);
-
-      // 峭壁地形
-      const terrain = createAlienTerrain(11, 9, 9, 0x164e63, 0x083344);
-      island.add(terrain);
-
-      // 連星長堤（對應中柱堤）
-      const bridgeGeo = new THREE.BoxGeometry(8, 0.6, 1.8);
-      const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x0891b2 });
-      const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
-      bridge.position.set(-8, 0.3, -2);
-      island.add(bridge);
-
-      // 歐羅拉全息燈塔（對應東引燈塔）
-      const towerGroup = new THREE.Group();
-      towerGroup.position.set(3, 9, 1);
-
-      // 塔身
-      const towerGeo = new THREE.CylinderGeometry(0.8, 1.2, 4.5, 12);
-      const towerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.2 });
-      towerGroup.add(new THREE.Mesh(towerGeo, towerMat));
-
-      // 圓頂
-      const domeGeo = new THREE.SphereGeometry(1, 16, 16);
-      const domeMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, metalness: 0.9, roughness: 0.1 });
-      const dome = new THREE.Mesh(domeGeo, domeMat);
-      dome.position.y = 2.4;
-      towerGroup.add(dome);
-
-      // 旋轉全息探照雙層光束 (Cone)
-      const beamGeo = new THREE.ConeGeometry(5, 26, 16, 1, true);
-      beamGeo.rotateX(Math.PI / 2);
-      const beamMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
+      // 白犬燈塔雙向旋轉光束 (Bidirectional Rotating Beams)
+      const djPivot = new THREE.Group();
+      djPivot.position.set(0, 2.65, 0);
+      const biBeamGeo1 = new THREE.ConeGeometry(1.4, 12, 16, 1, true);
+      biBeamGeo1.translate(0, -6, 0);
+      biBeamGeo1.rotateX(Math.PI / 2);
+      const biBeamGeo2 = new THREE.ConeGeometry(1.4, 12, 16, 1, true);
+      biBeamGeo2.translate(0, -6, 0);
+      biBeamGeo2.rotateX(-Math.PI / 2);
+      const biBeamMat = new THREE.MeshBasicMaterial({
+        color: 0xfde047,
         transparent: true,
-        opacity: 0.35,
-        side: THREE.DoubleSide
+        opacity: 0.38,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       });
-      const beam1 = new THREE.Mesh(beamGeo, beamMat);
-      beam1.position.set(0, 2.4, 13);
-      towerGroup.add(beam1);
-      lighthouseBeams.push(beam1);
+      djPivot.add(new THREE.Mesh(biBeamGeo1, biBeamMat), new THREE.Mesh(biBeamGeo2, biBeamMat));
+      baiquanGroup.add(djPivot);
+      animatedLightBeams.push({ pivot: djPivot, speed: -0.018 });
 
-      // 反向光束
-      const beam2 = beam1.clone();
-      beam2.rotation.y = Math.PI;
-      beam2.position.set(0, 2.4, -13);
-      towerGroup.add(beam2);
-      lighthouseBeams.push(beam2);
+      juguangGroup.add(baiquanGroup);
 
-      island.add(towerGroup);
-
-      scene.add(island);
-      islandMeshes.push(island);
-    }
-
-    /* 【04 雙子・引力雙星】 */
-    function buildGeminiTwinsIslands() {
-      const center = SECTORS_DATA[3].pos;
-      const island = new THREE.Group();
-      island.position.set(center.x, center.y, center.z);
-
-      // 西雙子星 (對應西莒)
-      const westTwin = createAlienTerrain(6, 6, 6, 0x4a044e, 0x2e1065);
-      westTwin.position.set(-5, 0, -2);
-      island.add(westTwin);
-
-      // 東雙子星 (對應東莒)
-      const eastTwin = createAlienTerrain(7, 7, 7, 0x701a75, 0x3b0764);
-      eastTwin.position.set(5, 0, 3);
-      island.add(eastTwin);
-
-      // 兩星之間的引力離子光橋
-      const arcPoints = [];
-      for (let i = 0; i <= 20; i++) {
-        const t = i / 20;
-        const x = -5 + t * 10;
-        const y = 3 + Math.sin(t * Math.PI) * 4;
-        const z = -2 + t * 5;
-        arcPoints.push(new THREE.Vector3(x, y, z));
+      // 東莒大埔傳統聚落石屋
+      for (let d = 0; d < 3; d++) {
+        const dapuHouse = createMatsuGraniteHouse(0.85);
+        dapuHouse.position.set(4.2 + d * 1.35, 2.2 + (d % 2) * 0.4, 2.1);
+        juguangGroup.add(dapuHouse);
       }
-      const curve = new THREE.CatmullRomCurve3(arcPoints);
-      const tubeGeo = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
-      const tubeMat = new THREE.MeshBasicMaterial({ color: 0xb5179e, transparent: true, opacity: 0.7 });
-      const gravityBridge = new THREE.Mesh(tubeGeo, tubeMat);
-      island.add(gravityBridge);
 
-      scene.add(island);
-      islandMeshes.push(island);
+      attachIslandHUDLabel(juguangGroup, '04 莒光雙島（西莒・東莒）', '白犬燈塔防風牆 × 青帆港・地方副詞與代名詞', '#6c4f8f', 8.4, 3);
+      scene.add(juguangGroup);
     }
 
-    /* 4. 量子穿梭艦隊 (3去程 + 3返程，自動偏移航道，乘浪起伏) */
-    function buildQuantumShuttleFleet() {
-      quantumFleet = [];
+    /* =========================================================================
+       6. 亮點三：雙向航行客輪系統 (buildBidirectionalFerryFleet)
+          3 條主航道 × 雙向對開共 6 艘立體客輪 (右舷 laneOffset + 乘浪起伏)
+       ========================================================================= */
+    function createFerryVesselMesh(bridgeColorHex) {
+      const vessel = new THREE.Group();
 
-      TRADE_ROUTES.forEach((route, routeIndex) => {
-        // 去程艦 (Forward)
-        const shipForward = createShuttleMesh(route.color);
-        scene.add(shipForward);
-        quantumFleet.push({
-          mesh: shipForward,
-          route: route,
-          direction: 1, // 正向
-          progress: (routeIndex * 0.33) % 1.0,
-          speed: 0.0018,
-          laneOffset: 2.2 // 右舷偏移演算法
-        });
+      // 破浪船首與深藍船體 (沿 +Z 軸朝向)
+      const hullShape = new THREE.Group();
+      const mainHull = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.42, 2.1),
+        new THREE.MeshStandardMaterial({ color: 0x0f2942, roughness: 0.4 })
+      );
+      mainHull.position.y = 0.21;
+      const bowCone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.68, 1.1, 4),
+        new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4 })
+      );
+      bowCone.rotation.x = Math.PI / 2;
+      bowCone.rotation.z = Math.PI / 4;
+      bowCone.position.set(0, 0.22, 1.55);
+      hullShape.add(mainHull, bowCone);
+      vessel.add(hullShape);
 
-        // 返程艦 (Backward)
-        const shipBackward = createShuttleMesh(route.color);
-        scene.add(shipBackward);
-        quantumFleet.push({
-          mesh: shipBackward,
-          route: route,
-          direction: -1, // 反向
-          progress: (routeIndex * 0.33 + 0.5) % 1.0,
-          speed: 0.0018,
-          laneOffset: 2.2 // 右舷偏移演算法
-        });
-      });
-    }
+      // 白色客艙甲板
+      const deckCabin = new THREE.Mesh(
+        new THREE.BoxGeometry(0.78, 0.42, 1.55),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+      );
+      deckCabin.position.set(0, 0.62, -0.05);
+      vessel.add(deckCabin);
 
-    /* 穿梭艦 3D 模型生成 */
-    function createShuttleMesh(colorHex) {
-      const shipGroup = new THREE.Group();
+      // 彩色駕駛台與煙囪
+      const wheelhouse = new THREE.Mesh(
+        new THREE.BoxGeometry(0.62, 0.32, 0.65),
+        new THREE.MeshStandardMaterial({ color: bridgeColorHex, roughness: 0.3 })
+      );
+      wheelhouse.position.set(0, 0.96, 0.32);
+      vessel.add(wheelhouse);
 
-      // 破浪艦首主體
-      const bodyGeo = new THREE.ConeGeometry(0.8, 2.6, 5);
-      bodyGeo.rotateX(Math.PI / 2);
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.85,
-        roughness: 0.2
-      });
-      const body = new THREE.Mesh(bodyGeo, bodyMat);
-      shipGroup.add(body);
-
-      // 駕駛艙
-      const cabGeo = new THREE.BoxGeometry(0.6, 0.4, 0.9);
-      const cabMat = new THREE.MeshBasicMaterial({ color: colorHex });
-      const cab = new THREE.Mesh(cabGeo, cabMat);
-      cab.position.set(0, 0.35, -0.2);
-      shipGroup.add(cab);
-
-      // 離子尾跡推進光束
-      const trailGeo = new THREE.CylinderGeometry(0.2, 0.05, 1.8, 8);
-      trailGeo.rotateX(Math.PI / 2);
-      const trailMat = new THREE.MeshBasicMaterial({
-        color: colorHex,
+      // 船尾白色浪花尾跡 (Wake Trail)
+      const wakeGeo = new THREE.PlaneGeometry(0.85, 2.6);
+      wakeGeo.rotateX(-Math.PI / 2);
+      const wakeMat = new THREE.MeshBasicMaterial({
+        color: 0xe0f2fe,
         transparent: true,
-        opacity: 0.7
+        opacity: 0.55,
+        side: THREE.DoubleSide,
+        depthWrite: false
       });
-      const trail = new THREE.Mesh(trailGeo, trailMat);
-      trail.position.set(0, 0, -1.8);
-      shipGroup.add(trail);
+      const wakeMesh = new THREE.Mesh(wakeGeo, wakeMat);
+      wakeMesh.position.set(0, 0.05, -2.25);
+      vessel.add(wakeMesh);
 
-      return shipGroup;
+      return vessel;
     }
 
-    /* 5. 3D 浮動 HUD 標籤管理 */
-    let hudElements = [];
-    function init3DHUDLabels() {
-      const container = document.getElementById('hud-container');
-      container.innerHTML = '';
-      hudElements = [];
-
-      SECTORS_DATA.forEach((sector, idx) => {
-        const hud = document.createElement('div');
-        hud.className = 'floating-hud';
-        hud.style.setProperty('--hud-color', sector.hexStr);
-        hud.style.setProperty('--hud-glow', sector.glow);
-
-        hud.innerHTML = `
-          <div class="hud-label" onclick="selectSector(${idx})">${sector.name}</div>
-          <div class="hud-pin"></div>
-        `;
-        container.appendChild(hud);
-        hudElements.push({ element: hud, pos: sector.pos });
-      });
-    }
-
-    function update3DHUDLabels() {
-      const widthHalf = window.innerWidth / 2;
-      const heightHalf = window.innerHeight / 2;
-
-      hudElements.forEach((hudItem) => {
-        const v = new THREE.Vector3(hudItem.pos.x, hudItem.pos.y + 12, hudItem.pos.z);
-        v.project(camera);
-
-        // 如果在相機後方則隱藏
-        if (v.z > 1) {
-          hudItem.element.style.opacity = '0';
-          return;
+    function buildBidirectionalFerryFleet() {
+      const routeSpecs = [
+        {
+          name: '北竿 ⇄ 東引',
+          color: 0x1c6472,
+          points: [
+            new THREE.Vector3(10, 0, -9),
+            new THREE.Vector3(21, 0, -16),
+            new THREE.Vector3(30, 0, -21.5)
+          ]
+        },
+        {
+          name: '北竿 ⇄ 南竿福澳 ⇄ 東莒',
+          color: 0xc57b30,
+          points: [
+            new THREE.Vector3(6, 0, -5.5),
+            new THREE.Vector3(-4.2, 0, 7.8),
+            new THREE.Vector3(-16.5, 0, 23.2)
+          ]
+        },
+        {
+          name: '南竿 ⇄ 西莒/東莒',
+          color: 0x6c4f8f,
+          points: [
+            new THREE.Vector3(-7.2, 0, 8.8),
+            new THREE.Vector3(-27.2, 0, 21.2),
+            new THREE.Vector3(-19.2, 0, 24.5)
+          ]
         }
+      ];
 
-        const screenX = (v.x * widthHalf) + widthHalf;
-        const screenY = -(v.y * heightHalf) + heightHalf;
+      routeSpecs.forEach((spec, idx) => {
+        const curve = new THREE.CatmullRomCurve3(spec.points);
 
-        hudItem.element.style.opacity = '1';
-        hudItem.element.style.left = `${screenX}px`;
-        hudItem.element.style.top = `${screenY}px`;
+        // 去程客輪 (dir = +1) 與 返程客輪 (dir = -1)
+        [1, -1].forEach((dir, dIdx) => {
+          const shipMesh = createFerryVesselMesh(spec.color);
+          scene.add(shipMesh);
+
+          bidirectionalFerries.push({
+            mesh: shipMesh,
+            curve,
+            dir,
+            t: (idx * 0.28 + dIdx * 0.48) % 1.0,
+            speed: 0.052 + idx * 0.006,
+            laneOffset: 1.15 // 右舷偏移量，確保雙向交會平順不碰撞
+          });
+        });
       });
     }
 
-    /* ========================================================
-       3. 互動邏輯與動畫更新循環
-       ======================================================== */
-    let clock = new THREE.Clock();
+    /* =========================================================================
+       7. 動畫主迴圈 (頂點波浪、雙向客輪俯仰乘浪、360度探照光束、平滑運鏡)
+       ========================================================================= */
+    const clock = new THREE.Clock();
+    const tmpPt = new THREE.Vector3();
+    const tmpTan = new THREE.Vector3();
+    const tmpRight = new THREE.Vector3();
+    const upAxis = new THREE.Vector3(0, 1, 0);
 
     function animate() {
       requestAnimationFrame(animate);
 
-      const elapsedTime = clock.getElapsedTime();
+      const elapsed = clock.getElapsedTime();
+      const dt = Math.min(clock.getDelta(), 0.05);
 
-      // 1. 即時頂點波浪計算 (setupCosmicEnergyOcean)
-      if (isHoloGridActive && oceanPosAttr) {
+      // 1. 更新 128×96 海圖頂點波浪
+      if (oceanPosAttr) {
         for (let i = 0; i < oceanPosAttr.count; i++) {
           const vx = oceanPosAttr.getX(i);
           const vz = oceanPosAttr.getZ(i);
-          const newY = getWaveHeightAt(vx, vz, elapsedTime);
-          oceanPosAttr.setY(i, newY);
+          oceanPosAttr.setY(i, getWaveHeightAt(vx, vz, elapsed));
         }
         oceanPosAttr.needsUpdate = true;
-        oceanGeometry.computeVertexNormals();
+        oceanGeo.computeVertexNormals();
       }
 
-      // 2. 泰坦光球呼吸金光
-      if (titanAuraGlow) {
-        const scale = 1.0 + Math.sin(elapsedTime * 3.0) * 0.25;
-        titanAuraGlow.scale.set(scale, scale, scale);
-      }
-
-      // 3. 信標燈塔 360 度旋轉
-      lighthouseBeams.forEach(beam => {
-        beam.rotation.y += 0.025;
+      // 2. 島嶼岸邊白色呼吸浪花裙邊動畫
+      animatedFoamRings.forEach(item => {
+        const pulse = 1.0 + Math.sin(elapsed * 2.4 + item.phase) * 0.045;
+        item.mesh.scale.set(item.baseScaleX * pulse, 1, item.baseScaleZ * pulse);
+        item.mesh.material.opacity = 0.45 + Math.sin(elapsed * 2.4 + item.phase) * 0.18;
       });
 
-      // 4. 量子穿梭艦隊雙向巡航與乘浪更新
-      if (isFleetActive) {
-        quantumFleet.forEach(ship => {
-          ship.progress += ship.speed * ship.direction;
-          if (ship.progress > 1.0) ship.progress = 0;
-          if (ship.progress < 0) ship.progress = 1.0;
+      // 3. 媽祖金光燈籠與白犬燈塔光暈呼吸
+      animatedGlowSpheres.forEach((halo, idx) => {
+        const s = 1.0 + Math.sin(elapsed * 3.2 + idx) * 0.18;
+        halo.scale.set(s, s, s);
+      });
 
-          const p1 = ship.route.from;
-          const p2 = ship.route.to;
+      // 4. 東引燈塔與東莒白犬燈塔 360 度燈芯公轉光束
+      animatedLightBeams.forEach(item => {
+        item.pivot.rotation.y += item.speed;
+      });
 
-          // 計算基礎直線插值
-          const curX = THREE.MathUtils.lerp(p1.x, p2.x, ship.progress);
-          const curZ = THREE.MathUtils.lerp(p1.z, p2.z, ship.progress);
+      // 5. 6 艘雙向客輪右舷偏移與真實乘浪起伏
+      if (isFerryVisible) {
+        bidirectionalFerries.forEach((ferry, fIdx) => {
+          ferry.t += (ferry.speed * 0.0022) * ferry.dir;
+          if (ferry.t > 1) ferry.t -= 1;
+          if (ferry.t < 0) ferry.t += 1;
 
-          // 計算航線前進切線向量以進行右舷偏移
-          const dirVec = new THREE.Vector3(p2.x - p1.x, 0, p2.z - p1.z).normalize();
-          const normalVec = new THREE.Vector3(-dirVec.z, 0, dirVec.x); // 法向量 (右舷)
+          ferry.curve.getPointAt(ferry.t, tmpPt);
+          ferry.curve.getTangentAt(ferry.t, tmpTan);
+          if (ferry.dir < 0) tmpTan.negate(); // 返程切線反轉
 
-          const finalX = curX + normalVec.x * ship.laneOffset * ship.direction;
-          const finalZ = curZ + normalVec.z * ship.laneOffset * ship.direction;
+          // 右舷法向量：tangent × upAxis
+          tmpRight.crossVectors(tmpTan, upAxis).normalize();
 
-          // 乘浪起伏：讀取頂點波浪高度
-          const waveY = getWaveHeightAt(finalX, finalZ, elapsedTime) + 0.35;
+          const shipX = tmpPt.x + tmpRight.x * ferry.laneOffset;
+          const shipZ = tmpPt.z + tmpRight.z * ferry.laneOffset;
+          const waveY = getWaveHeightAt(shipX, shipZ, elapsed);
 
-          ship.mesh.position.set(finalX, waveY, finalZ);
+          ferry.mesh.position.set(shipX, waveY + 0.08, shipZ);
 
-          // 船頭朝向前進方向
-          const targetLook = new THREE.Vector3(
-            finalX + dirVec.x * ship.direction,
-            waveY,
-            finalZ + dirVec.z * ship.direction
-          );
-          ship.mesh.lookAt(targetLook);
+          // 朝向前進切線並疊加微幅波浪俯仰角 (Pitch) 與橫搖角 (Roll)
+          ferry.mesh.lookAt(shipX + tmpTan.x, waveY + 0.08, shipZ + tmpTan.z);
+          ferry.mesh.rotation.x += Math.sin(elapsed * 3.5 + fIdx) * 0.045;
+          ferry.mesh.rotation.z += Math.cos(elapsed * 2.8 + fIdx) * 0.05;
         });
       }
 
-      // 5. 星系環繞巡航 (Auto-Tour)
-      if (isTouring) {
-        tourAngle += 0.005;
-        const radius = 75;
-        camera.position.x = Math.sin(tourAngle) * radius;
-        camera.position.z = Math.cos(tourAngle) * radius;
-        camera.position.y = 55;
+      // 6. 單一狀態機平滑運鏡 (Cubic Ease-Out)
+      if (camFlight.active) {
+        const u = Math.min(1, (elapsed - camFlight.startTime) / camFlight.duration);
+        const ease = 1 - Math.pow(1 - u, 3);
+        camera.position.lerpVectors(camFlight.startPos, camFlight.endPos, ease);
+        controls.target.lerpVectors(camFlight.startTarget, camFlight.endTarget, ease);
+        if (u >= 1) camFlight.active = false;
+      } else if (isAutoOrbit) {
+        const angle = elapsed * 0.18;
+        camera.position.x = Math.sin(angle) * 76;
+        camera.position.z = Math.cos(angle) * 76;
+        camera.position.y = 48;
         controls.target.set(0, 0, 0);
       }
 
       controls.update();
-      update3DHUDLabels();
       renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
     }
 
-    /* ========================================================
-       4. UI 互動與事件處理
-       ======================================================== */
-    function selectSector(index, smoothMove = true) {
-      currentSectorIndex = index;
-      const sector = SECTORS_DATA[index];
+    /* =========================================================================
+       8. UI 互動、3D 射線拾取與 Web Speech API 語音教學
+       ========================================================================= */
+    function flyCameraTo(endPos, endTarget, duration = 1.15) {
+      isAutoOrbit = false;
+      document.getElementById('btn-orbit-tour').classList.remove('active');
+      camFlight.active = true;
+      camFlight.startTime = clock.getElapsedTime();
+      camFlight.duration = duration;
+      camFlight.startPos.copy(camera.position);
+      camFlight.endPos.copy(endPos);
+      camFlight.startTarget.copy(controls.target);
+      camFlight.endTarget.copy(endTarget);
+    }
 
-      // 更新膠囊按鈕狀態
-      const buttons = document.querySelectorAll('.capsule-btn');
-      buttons.forEach((btn, i) => {
-        btn.classList.toggle('active', i === index);
+    function updateDrawerUI(idx) {
+      currentIslandIdx = idx;
+      const data = ARCHIPELAGO_DATA[idx];
+
+      // 同步頂部四島膠囊選單高亮
+      document.querySelectorAll('.island-capsule').forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
       });
 
-      // 更新戰情面板內容
-      document.getElementById('panel-tag').textContent = sector.code;
-      document.getElementById('panel-title').textContent = sector.name;
-      document.getElementById('panel-target').textContent = sector.target;
-      document.getElementById('panel-error').innerHTML = sector.errorHtml;
-      document.getElementById('panel-rule').innerHTML = sector.ruleHtml;
-      document.getElementById('panel-formula').textContent = sector.formulaText;
+      const chip = document.getElementById('drawer-chip');
+      chip.textContent = data.name;
+      chip.style.background = data.themeHex;
 
-      toggleMissionPanel(true);
+      document.getElementById('drawer-title').textContent = data.title;
+      document.getElementById('drawer-landmark').textContent = data.landmark;
+      document.getElementById('drawer-errors').innerHTML = data.errors;
+      document.getElementById('drawer-audit').innerHTML = data.audit;
+      document.getElementById('drawer-solution').innerHTML = data.solution;
+      document.getElementById('drawer-chant').innerText = data.chant;
 
-      // 相機平滑聚焦於該星島
-      if (smoothMove) {
-        isTouring = false;
-        document.getElementById('btn-camera-tour').classList.remove('active');
+      // 渲染隨堂改錯挑戰
+      const qBox = document.getElementById('quiz-box');
+      document.getElementById('quiz-question').textContent = data.quiz.q;
+      const optContainer = document.getElementById('quiz-options');
+      const fb = document.getElementById('quiz-feedback');
+      fb.textContent = '';
+      optContainer.innerHTML = '';
 
-        const targetPos = sector.pos;
-        // 相機移至星島前方稍微俯視
-        const targetCamX = targetPos.x + 22;
-        const targetCamY = targetPos.y + 26;
-        const targetCamZ = targetPos.z + 32;
+      data.quiz.options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'quiz-option';
+        b.textContent = opt.text;
+        b.onclick = () => {
+          optContainer.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('correct', 'wrong'));
+          b.classList.add(opt.correct ? 'correct' : 'wrong');
+          fb.textContent = opt.msg;
+          fb.style.color = opt.correct ? '#6ee7b7' : '#fca5a5';
+        };
+        optContainer.appendChild(b);
+      });
 
-        smoothCameraMove(targetCamX, targetCamY, targetCamZ, targetPos.x, targetPos.y + 3, targetPos.z);
-      }
+      window.toggleDrawer(true);
     }
 
-    // 相機平滑過渡 (簡易 Lerp 漸變)
-    function smoothCameraMove(tx, ty, tz, lx, ly, lz) {
-      let t = 0;
-      const startCam = camera.position.clone();
-      const startTarget = controls.target.clone();
-      const destCam = new THREE.Vector3(tx, ty, tz);
-      const destTarget = new THREE.Vector3(lx, ly, lz);
+    window.focusIsland = function(idx) {
+      const data = ARCHIPELAGO_DATA[idx];
+      updateDrawerUI(idx);
+      flyCameraTo(
+        new THREE.Vector3(data.camOffset.x, data.camOffset.y, data.camOffset.z),
+        new THREE.Vector3(data.lookAt.x, data.lookAt.y, data.lookAt.z)
+      );
+    };
 
-      const animInterval = setInterval(() => {
-        t += 0.04;
-        camera.position.lerpVectors(startCam, destCam, t);
-        controls.target.lerpVectors(startTarget, destTarget, t);
-        if (t >= 1) {
-          clearInterval(animInterval);
-        }
-      }, 16);
-    }
+    window.toggleDrawer = function(show) {
+      document.getElementById('writing-drawer').classList.toggle('collapsed', !show);
+    };
 
-    function toggleMissionPanel(show) {
-      const panel = document.getElementById('mission-panel');
-      if (show) {
-        panel.classList.remove('collapsed');
+    window.toggleQuizBox = function() {
+      document.getElementById('quiz-box').classList.toggle('active');
+    };
+
+    window.cycleChartBlend = function() {
+      chartBlendMode = (chartBlendMode + 1) % 3;
+      const btn = document.getElementById('btn-wave-chart');
+      if (chartBlendMode === 2) {
+        oceanMesh.material.map = chartTexture;
+        oceanMesh.material.opacity = 0.98;
+        btn.textContent = '🗺️ 海圖波浪：高融合 (100%)';
+        btn.classList.add('active');
+      } else if (chartBlendMode === 1) {
+        oceanMesh.material.map = chartTexture;
+        oceanMesh.material.opacity = 0.68;
+        btn.textContent = '🗺️ 海圖波浪：輕透融合 (65%)';
+        btn.classList.add('active');
       } else {
-        panel.classList.add('collapsed');
+        oceanMesh.material.map = plainOceanTexture;
+        oceanMesh.material.opacity = 0.92;
+        btn.textContent = '🌊 海圖波浪：純立體深海';
+        btn.classList.remove('active');
       }
-    }
+      oceanMesh.material.needsUpdate = true;
+    };
 
-    function toggleHoloGrid() {
-      isHoloGridActive = !isHoloGridActive;
-      document.getElementById('btn-holo-grid').classList.toggle('active', isHoloGridActive);
-      cosmicOceanMesh.material.wireframe = !isHoloGridActive;
-    }
+    window.toggleFerryFleet = function() {
+      isFerryVisible = !isFerryVisible;
+      document.getElementById('btn-ferry-toggle').classList.toggle('active', isFerryVisible);
+      bidirectionalFerries.forEach(f => { f.mesh.visible = isFerryVisible; });
+    };
 
-    function toggleFleetMode() {
-      isFleetActive = !isFleetActive;
-      document.getElementById('btn-fleet').classList.toggle('active', isFleetActive);
-      quantumFleet.forEach(ship => {
-        ship.mesh.visible = isFleetActive;
-      });
-    }
+    window.toggleAutoOrbit = function() {
+      isAutoOrbit = !isAutoOrbit;
+      camFlight.active = false;
+      document.getElementById('btn-orbit-tour').classList.toggle('active', isAutoOrbit);
+    };
 
-    function startPlanetaryTour() {
-      isTouring = !isTouring;
-      document.getElementById('btn-camera-tour').classList.toggle('active', isTouring);
-      if (isTouring) {
-        tourAngle = Math.atan2(camera.position.x, camera.position.z);
-      }
-    }
+    window.setTopChartView = function() {
+      flyCameraTo(new THREE.Vector3(0, 96, 0.1), new THREE.Vector3(0, 0, 0), 1.2);
+    };
 
-    function resetView() {
-      isTouring = false;
-      document.getElementById('btn-camera-tour').classList.remove('active');
-      smoothCameraMove(0, 65, 80, 0, 0, 0);
-    }
+    window.resetOverview = function() {
+      flyCameraTo(new THREE.Vector3(0, 56, 74), new THREE.Vector3(0, 0, 2), 1.1);
+    };
 
-    /* Web Speech API: 瀏覽器原英語音朗讀口訣與示範 */
-    function speakCurrentMission() {
-      const sector = SECTORS_DATA[currentSectorIndex];
-      const speakBtn = document.getElementById('speak-btn-text');
-
+    window.speakIslandGuidance = function() {
       if (!('speechSynthesis' in window)) {
-        alert("您的瀏覽器暫不支援語音合成合成功能。");
+        alert('您的瀏覽器暫不支援語音合成功能');
         return;
       }
+      window.speechSynthesis.cancel();
+      const data = ARCHIPELAGO_DATA[currentIslandIdx];
+      const utter = new SpeechSynthesisUtterance(data.voiceText);
+      utter.lang = 'zh-TW';
+      utter.rate = 1.03;
+      const lbl = document.getElementById('voice-btn-label');
+      lbl.textContent = '星際導師朗讀中...';
+      utter.onend = () => { lbl.textContent = '真人語音朗讀教學'; };
+      utter.onerror = () => { lbl.textContent = '真人語音朗讀教學'; };
+      window.speechSynthesis.speak(utter);
+    };
 
-      window.speechSynthesis.cancel(); // 停止先前的發音
+    /* 3D 島嶼模型 Raycaster 點擊拾取 */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
 
-      const utterance = new SpeechSynthesisUtterance(sector.voiceScript);
-      utterance.lang = 'zh-TW';
-      utterance.rate = 1.05;
-      utterance.pitch = 1.1;
+    function onPointerUpRaycasting(e) {
+      if (e.button !== 0) return;
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
 
-      speakBtn.textContent = "🔊 星際導師朗讀中...";
-
-      utterance.onend = () => {
-        speakBtn.textContent = "聽取星際導師・口訣語音導引";
-      };
-
-      utterance.onerror = () => {
-        speakBtn.textContent = "聽取星際導師・口訣語音導引";
-      };
-
-      window.speechSynthesis.speak(utterance);
+      const hits = raycaster.intersectObjects(clickableMeshes, false);
+      if (hits.length > 0 && hits[0].object.userData.islandIdx !== undefined) {
+        window.focusIsland(hits[0].object.userData.islandIdx);
+      }
     }
 
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    window.onload = init;
+    initScene();
   </script>
 </body>
 </html>
