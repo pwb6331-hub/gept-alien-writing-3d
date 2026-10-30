@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GEPT 初級英檢寫作精進外星互動島 3D | Alien Writing Archipelago</title>
+  <!-- Google Fonts: 思源黑體 Noto Sans TC + Orbitron 科幻英文字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    :root {
+      --bg-space: #050814;
+      --neon-blue: #00f0ff;
+      --neon-gold: #ffbe0b;
+      --neon-green: #00ff88;
+      --neon-purple: #b5179e;
+      --neon-magenta: #f72585;
+      --card-bg: rgba(10, 16, 36, 0.85);
+      --border-glow: rgba(0, 240, 255, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-space);
+      font-family: 'Noto Sans TC', sans-serif;
+      color: #e0f2fe;
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* 頂部全息導航列 */
+    header {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .brand-box {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      padding: 12px 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+      pointer-events: auto;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #00f0ff, #ffbe0b, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 1px;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1.5px;
+    }
+
+    /* 四星區快速跳轉膠囊列 */
+    .capsule-nav {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .capsule-btn {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .capsule-btn:hover {
+      transform: translateY(-2px);
+      border-color: #ffffff;
+      box-shadow: 0 0 16px var(--glow-color, rgba(0, 240, 255, 0.6));
+    }
+
+    .capsule-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--theme-color, #00f0ff);
+      box-shadow: 0 0 20px var(--glow-color, rgba(0, 240, 255, 0.7));
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--theme-color);
+      box-shadow: 0 0 8px var(--theme-color);
+    }
+
+    /* 右側戰情儀表板面板 */
+    #mission-panel {
+      position: absolute;
+      top: 90px;
+      right: 20px;
+      width: 380px;
+      max-height: calc(100vh - 180px);
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.15);
+      overflow-y: auto;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    }
+
+    #mission-panel.collapsed {
+      transform: translateX(420px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+
+    .panel-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--neon-blue);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .close-btn:hover { color: #fff; }
+
+    .target-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(247, 37, 133, 0.2);
+      border: 1px solid rgba(247, 37, 133, 0.5);
+      border-radius: 6px;
+      font-size: 12px;
+      color: #ff70a6;
+      font-weight: 700;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .error-card {
+      background: rgba(255, 77, 77, 0.1);
+      border-left: 3px solid #ff4d4d;
+      padding: 10px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .error-card strike {
+      color: #fca5a5;
+    }
+
+    .solution-card {
+      background: rgba(0, 255, 136, 0.1);
+      border-left: 3px solid var(--neon-green);
+      padding: 10px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .formula-box {
+      background: rgba(255, 190, 11, 0.12);
+      border: 1px dashed var(--neon-gold);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #fef08a;
+      line-height: 1.5;
+    }
+
+    .voice-action-btn {
+      background: linear-gradient(135deg, #00f0ff, #3a86ff);
+      color: #000;
+      font-weight: 900;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
+      transition: all 0.2s ease;
+      margin-top: 6px;
+    }
+
+    .voice-action-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(0, 240, 255, 0.7);
+    }
+
+    /* 底部控制列 */
+    footer {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      padding: 10px 20px;
+      border-radius: 50px;
+      border: 1px solid var(--border-glow);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .tool-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .tool-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--neon-blue);
+      color: #fff;
+    }
+
+    .tool-btn.active {
+      background: var(--neon-blue);
+      color: #050814;
+      font-weight: 800;
+      border-color: var(--neon-blue);
+    }
+
+    /* 3D 浮動標籤風格 */
+    .floating-hud {
+      position: absolute;
+      pointer-events: none;
+      transform: translate(-50%, -100%);
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: opacity 0.3s;
+    }
+
+    .hud-label {
+      background: rgba(5, 8, 20, 0.85);
+      border: 1px solid var(--hud-color, #00f0ff);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      color: #fff;
+      white-space: nowrap;
+      box-shadow: 0 0 12px var(--hud-glow, rgba(0, 240, 255, 0.5));
+    }
+
+    .hud-pin {
+      width: 2px;
+      height: 16px;
+      background: linear-gradient(to bottom, var(--hud-color, #00f0ff), transparent);
+    }
+
+    /* 語音播報動畫波紋 */
+    .audio-wave {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+    }
+    .wave-bar {
+      width: 3px;
+      background: #000;
+      border-radius: 2px;
+      animation: soundWave 0.8s infinite ease-in-out alternate;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes soundWave {
+      0% { height: 4px; }
+      100% { height: 14px; }
+    }
+
+    /* 手機與平板 RWD 響應式適配 */
+    @media (max-width: 768px) {
+      header {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .brand-box {
+        padding: 8px 14px;
+      }
+      .brand-title {
+        font-size: 15px;
+      }
+      .brand-sub {
+        font-size: 10px;
+      }
+      .capsule-nav {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .capsule-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #mission-panel {
+        top: auto;
+        bottom: 75px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-height: 48vh;
+        padding: 14px;
+        border-radius: 14px;
+      }
+      #mission-panel.collapsed {
+        transform: translateY(120%);
+      }
+      footer {
+        bottom: 12px;
+        width: 92%;
+        justify-content: center;
+        padding: 6px 12px;
+        gap: 6px;
+      }
+      .tool-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D WebGL 畫布容器 -->
+  <div id="webgl-canvas"></div>
+
+  <!-- 頂部導航 -->
+  <header>
+    <div class="brand-box">
+      <div class="brand-title">
+        <span>🪐 GEPT ALIEN ARCHIPELAGO</span>
+      </div>
+      <div class="brand-sub">初級英檢寫作精進・外星微縮互動島</div>
+    </div>
+
+    <!-- 四星區膠囊選單 -->
+    <div class="capsule-nav">
+      <button class="capsule-btn active" style="--theme-color:#ffbe0b; --glow-color:rgba(255,190,11,0.6);" onclick="selectSector(0)">
+        <span class="dot"></span> 01 涅布拉・時態要塞星
+      </button>
+      <button class="capsule-btn" style="--theme-color:#00ff88; --glow-color:rgba(0,255,136,0.6);" onclick="selectSector(1)">
+        <span class="dot"></span> 02 賽博・排毒語塊環礁
+      </button>
+      <button class="capsule-btn" style="--theme-color:#00f0ff; --glow-color:rgba(0,240,255,0.6);" onclick="selectSector(2)">
+        <span class="dot"></span> 03 歐羅拉・全息信標星
+      </button>
+      <button class="capsule-btn" style="--theme-color:#b5179e; --glow-color:rgba(181,23,158,0.6);" onclick="selectSector(3)">
+        <span class="dot"></span> 04 雙子・引力雙星
+      </button>
+    </div>
+  </header>
+
+  <!-- 3D 浮動標籤容器（由 JS 動態更新 3D 投影座標） -->
+  <div id="hud-container"></div>
+
+  <!-- 右側戰情儀表板面板 -->
+  <aside id="mission-panel">
+    <div class="panel-header">
+      <div>
+        <span class="panel-tag" id="panel-tag">SECTOR 01 // VERB TITAN</span>
+        <h2 class="panel-title" id="panel-title">涅布拉・時態要塞星</h2>
+      </div>
+      <button class="close-btn" onclick="toggleMissionPanel(false)">×</button>
+    </div>
+
+    <div class="target-badge" id="panel-target">攻克：過去式焦慮 ＆ to 後方動詞打架</div>
+
+    <div class="section-title">⚠️ 學生作文致命病灶（Stella 實例）</div>
+    <div class="error-card" id="panel-error">
+      • <code>to <strike>bought</strike> a bread</code> (買麵包)<br>
+      • <code>wanted to <strike>got</strike> a good grade</code><br>
+      • <code>outside to <strike>played</strike></code><br>
+      • <code>she <strike>felts</strike> very hungry</code>
+    </div>
+
+    <div class="section-title">🛡️ 外星守門員・核心文法晶片</div>
+    <div class="solution-card" id="panel-rule">
+      <strong>「to 是原形照妖鏡」鐵律：</strong><br>
+      無論前面的時態多麼過去，只要遇到 <code>to / did / didn't / will / can</code>，動詞立刻打回原形！<br>
+      • <code>went to buy some bread</code><br>
+      • <code>wanted to get a good grade</code>
+    </div>
+
+    <div class="section-title">⚡ 快速精進口訣語音（直接跟讀）</div>
+    <div class="formula-box" id="panel-formula">
+      「一山不容二虎，隨時間變化的動詞只有一個！看到 to，手不要抖，後面一律放原形！」
+    </div>
+
+    <button class="voice-action-btn" id="voice-speak-btn" onclick="speakCurrentMission()">
+      <div class="audio-wave">
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+      </div>
+      <span id="speak-btn-text">聽取星際導師・口訣語音導引</span>
+    </button>
+  </aside>
+
+  <!-- 底部視角與效果控制列 -->
+  <footer>
+    <button class="tool-btn active" id="btn-holo-grid" onclick="toggleHoloGrid()">
+      🌐 全息量子星海波浪
+    </button>
+    <button class="tool-btn active" id="btn-fleet" onclick="toggleFleetMode()">
+      🛸 量子雙向穿梭艦隊 (6艘)
+    </button>
+    <button class="tool-btn" id="btn-camera-tour" onclick="startPlanetaryTour()">
+      🎥 星系環繞巡航 (Auto-Tour)
+    </button>
+    <button class="tool-btn" onclick="resetView()">
+      🎯 重置視角
+    </button>
+  </footer>
+
+  <script>
+    /* ========================================================
+       1. 資料模型：四星區英檢寫作精進資料庫
+       ======================================================== */
+    const SECTORS_DATA = [
+      {
+        id: 0,
+        name: "01 涅布拉・時態要塞星",
+        code: "NEBULA-01 // VERB CORE",
+        pos: { x: -32, y: 0, z: 12 },
+        color: 0xffbe0b,
+        hexStr: "#ffbe0b",
+        glow: "rgba(255, 190, 11, 0.6)",
+        target: "攻克：過去式焦慮 ＆ to 後方動詞打架",
+        landmark: "原形泰坦神像（持照妖鏡金光燈籠）與量子停泊港",
+        errorHtml: "• <code>to <strike>bought</strike> a bread</code> (買麵包)<br>• <code>wanted to <strike>got</strike> a good grade</code><br>• <code>outside to <strike>played</strike></code><br>• <code>she <strike>felts</strike> very hungry</code>",
+        ruleHtml: "<strong>「to 是原形照妖鏡」鐵律：</strong><br>無論全篇如何過去，只要有 <code>to / did / didn't / will / can</code>，動詞立刻恢復原形！<br>• <code>went to buy some bread</code><br>• <code>wanted to get a good grade</code>",
+        formulaText: "「一山不容二虎，主要動詞只有一個！第二個動作戴上 to 的項圈，動詞立刻變回原形！」",
+        voiceScript: "涅布拉要塞提醒你：初級英檢最忌諱過去式焦慮！看到 to，請立刻切換為原形動詞！跟我唸三次：went to buy, wanted to get, outside to play!"
+      },
+      {
+        id: 1,
+        name: "02 賽博・排毒語塊環礁",
+        code: "CYBER-02 // CHUNKS LAGOON",
+        pos: { x: 26, y: 0, z: -28 },
+        color: 0x00ff88,
+        hexStr: "#00ff88",
+        glow: "rgba(0, 255, 136, 0.6)",
+        target: "攻克：校園日常中式死譯（Chinglish）",
+        landmark: "語塊水晶生化礁 ＆ 除錯龜形離子要塞",
+        errorHtml: "• <strike>read my self-study and write it</strike> (讀自修寫自修)<br>• <strike>write my assessment to review</strike> (寫評量)<br>• <strike>Chinese grades announced day</strike><br>• <strike>know many friends</strike>",
+        ruleHtml: "<strong>台灣考生排毒專用語塊：</strong><br>• 做自修/習題：<code>do exercises in my workbook</code><br>• 寫考卷：<code>take practice tests / do mock tests</code><br>• 成績公布：<code>the day our test scores came out</code><br>• 認識朋友：<code>make friends</code>",
+        formulaText: "「不可按中文一個字一個字填空！整塊英文打包背：do workbook exercises, make new friends!」",
+        voiceScript: "排毒語塊環礁警報：禁止使用中文逐字英譯！外國人聽不懂 read self-study。請整塊記住：do exercises in my workbook, make new friends!"
+      },
+      {
+        id: 2,
+        name: "03 歐羅拉・全息信標星",
+        code: "AURORA-03 // VOICE BEACON",
+        pos: { x: 34, y: 0, z: 28 },
+        color: 0x00f0ff,
+        hexStr: "#00f0ff",
+        glow: "rgba(0, 240, 255, 0.6)",
+        target: "攻克：語音音律迴路 ＆ 氣音抓漏檢查",
+        landmark: "雙層高亮全息旋轉探照燈塔 ＆ 連星能量長堤",
+        errorHtml: "• <strike>Last Monday, was a special day.</strike> (逗號切斷主詞動詞)<br>• <strike>he exam grade was not better</strike> (所有格搞丟)<br>• <strike>heard a baby cry and dog woof</strike> (漏冠詞與狀聲詞當動詞)",
+        ruleHtml: "<strong>氣音朗讀檢查法 (Whisper Proofreading)：</strong><br>交卷前用氣音唸一遍！嘴巴唸到 <code>he exam</code> 會卡住，耳朵會逼你改成 <code>his exam</code>；唸到 <code>dog woof</code> 會知道要加 <code>his dog was barking</code>！",
+        formulaText: "「眼睛會騙人，耳朵不會！考場最後一分鐘，出聲氣音讀一遍，抓出所有漏掉的 s 和 his！」",
+        voiceScript: "歐羅拉信標啟動！聽覺是英文寫作的超能力。寫完短文，用氣音讀一次，耳朵會立刻抓出 he exam 和 dog woof 的致命疏漏！"
+      },
+      {
+        id: 3,
+        name: "04 雙子・引力雙星",
+        code: "GEMINI-04 // GRAVITY TWINS",
+        pos: { x: -26, y: 0, z: -30 },
+        color: 0xb5179e,
+        hexStr: "#b5179e",
+        glow: "rgba(181, 23, 158, 0.6)",
+        target: "攻克：地方副詞吃掉介系詞 ＆ 代名詞指代",
+        landmark: "雙星引力傳輸門 ＆ 反重力青帆能量港",
+        errorHtml: "• <strike>go to there / play in there</strike><br>• <strike>brought his dog to outside</strike><br>• <strike>eat breakfast on the home</strike><br>• <strike>put on the leash for her dog</strike> (狗是男生的，誤寫成女生的)",
+        ruleHtml: "<strong>地方副詞黑洞定律：</strong><br><code>here / there / home / outside / upstairs</code> 本身就是副詞，前方**禁止加 to / in / at**！<br>• 直接說：<code>go there, play there, go outside, stay home</code>！",
+        formulaText: "「here, there, home, outside 是四大黑洞，看見介系詞直接吞掉！千萬不要寫 go to there！」",
+        voiceScript: "雙子引力警報！there, home, outside 擁有超強引力，會把前面多餘的 to 和 in 吞噬乾淨！大聲複誦：go there! go outside! stay home!"
+      }
+    ];
+
+    /* ========================================================
+       2. THREE.JS 核心場景建構
+       ======================================================== */
+    let scene, camera, renderer, controls;
+    let cosmicOceanMesh, oceanGeometry, oceanPosAttr;
+    const oceanGridX = 128, oceanGridZ = 96;
+    let oceanVerticesOrig = [];
+    let isHoloGridActive = true;
+    let isFleetActive = true;
+    let isTouring = false;
+    let tourAngle = 0;
+
+    let quantumFleet = []; // 6艘穿梭艦
+    let islandMeshes = [];
+    let lighthouseBeams = [];
+    let titanAuraGlow;
+    let currentSectorIndex = 0;
+
+    // 航道定義（對應三條外星量子航線，雙向 6 艘）
+    const TRADE_ROUTES = [
+      // 航線 1: 涅布拉 (0) ⇄ 雙子星 (3)
+      { from: SECTORS_DATA[0].pos, to: SECTORS_DATA[3].pos, color: 0xffbe0b },
+      // 航線 2: 涅布拉 (0) ⇄ 歐羅拉 (2)
+      { from: SECTORS_DATA[0].pos, to: SECTORS_DATA[2].pos, color: 0x00f0ff },
+      // 航線 3: 賽博環礁 (1) ⇄ 歐羅拉 (2)
+      { from: SECTORS_DATA[1].pos, to: SECTORS_DATA[2].pos, color: 0x00ff88 }
+    ];
+
+    function init() {
+      const container = document.getElementById('webgl-canvas');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // 場景
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050814);
+      scene.fog = new THREE.FogExp2(0x050814, 0.007);
+
+      // 相機
+      camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
+      camera.position.set(0, 65, 80);
+
+      // 渲染器
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 控制器
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.02; // 禁止穿透水底
+      controls.minDistance = 20;
+      controls.maxDistance = 180;
+      controls.target.set(0, 0, 0);
+
+      // 光照系統
+      setupLighting();
+
+      // 1. 量子能量海洋 (頂點動態波浪 + 全息星雲紋理)
+      setupCosmicEnergyOcean();
+
+      // 2. 宇宙星塵粒子背景
+      setupStarfield();
+
+      // 3. 四大微縮外星島嶼地貌與科幻地標
+      buildAlienWritingArchipelago();
+
+      // 4. 量子穿梭艦隊 (雙向 6 艘，自動偏移軌道與波浪浮動)
+      buildQuantumShuttleFleet();
+
+      // 5. 初始化 3D 浮動 HUD 標籤
+      init3DHUDLabels();
+
+      // 事件監聽
+      window.addEventListener('resize', onWindowResize);
+
+      // 預設選中 0 號星島
+      selectSector(0, false);
+
+      // 開始渲染循環
+      animate();
+    }
+
+    /* 燈光建置 */
+    function setupLighting() {
+      const ambientLight = new THREE.AmbientLight(0x1a2639, 1.8);
+      scene.add(ambientLight);
+
+      // 主星恆星光（金色帶藍邊）
+      const sunLight = new THREE.DirectionalLight(0xa5f3fc, 2.0);
+      sunLight.position.set(60, 90, 40);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.bias = -0.001;
+      scene.add(sunLight);
+
+      // 輔助深紫色星雲底光
+      const nebulaLight = new THREE.DirectionalLight(0x7c3aed, 1.2);
+      nebulaLight.position.set(-60, 40, -50);
+      scene.add(nebulaLight);
+    }
+
+    /* 1. 量子能量海（頂點波浪 + 動態全息網格） */
+    function setupCosmicEnergyOcean() {
+      oceanGeometry = new THREE.PlaneGeometry(160, 120, oceanGridX, oceanGridZ);
+      oceanGeometry.rotateX(-Math.PI / 2);
+
+      oceanPosAttr = oceanGeometry.attributes.position;
+      oceanVerticesOrig = [];
+      for (let i = 0; i < oceanPosAttr.count; i++) {
+        oceanVerticesOrig.push(oceanPosAttr.getY(i));
+      }
+
+      // 生成動態全息網格與星圖紋理
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 768;
+      const ctx = canvas.getContext('2d');
+
+      // 底色：深海量子漸層
+      const grad = ctx.createLinearGradient(0, 0, 1024, 768);
+      grad.addColorStop(0, '#040d21');
+      grad.addColorStop(0.5, '#0a1d37');
+      grad.addColorStop(1, '#06132b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 768);
+
+      // 繪製全息經緯度網格與星雲羅盤線
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < 1024; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 768);
+        ctx.stroke();
+      }
+      for (let y = 0; y < 768; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1024, y);
+        ctx.stroke();
+      }
+
+      // 繪製外星全息星盤與航線虛線
+      ctx.strokeStyle = 'rgba(255, 190, 11, 0.35)';
+      ctx.setLineDash([8, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(512, 384, 180, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(512, 384, 280, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const mapTexture = new THREE.CanvasTexture(canvas);
+      mapTexture.wrapS = THREE.ClampToEdgeWrapping;
+      mapTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+      const oceanMaterial = new THREE.MeshStandardMaterial({
+        map: mapTexture,
+        color: 0x00f0ff,
+        roughness: 0.15,
+        metalness: 0.85,
+        transparent: true,
+        opacity: 0.92,
+        wireframe: false
+      });
+
+      cosmicOceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
+      cosmicOceanMesh.receiveShadow = true;
+      cosmicOceanMesh.position.y = 0;
+      scene.add(cosmicOceanMesh);
+    }
+
+    // 計算特定位置的即時波浪高度
+    function getWaveHeightAt(x, z, time) {
+      const w1 = Math.sin(x * 0.12 + time * 2.0) * Math.cos(z * 0.1 + time * 1.5) * 0.7;
+      const w2 = Math.sin(x * 0.06 - z * 0.08 + time * 1.2) * 0.5;
+      return w1 + w2;
+    }
+
+    /* 2. 背景宇宙星塵粒子 */
+    function setupStarfield() {
+      const starGeo = new THREE.BufferGeometry();
+      const starCount = 1200;
+      const starPos = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount * 3; i += 3) {
+        starPos[i] = (Math.random() - 0.5) * 300;
+        starPos[i + 1] = Math.random() * 80 + 10;
+        starPos[i + 2] = (Math.random() - 0.5) * 300;
+      }
+      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+      const starMat = new THREE.PointsMaterial({
+        color: 0x38bdf8,
+        size: 0.7,
+        transparent: true,
+        opacity: 0.8
+      });
+      const starfield = new THREE.Points(starGeo, starMat);
+      scene.add(starfield);
+    }
+
+    /* 3. 建立四大微縮外星島嶼與專屬科幻地標 */
+    function buildAlienWritingArchipelago() {
+      // 01 涅布拉星（新月形山脊 + 原形泰坦神像 + 量子貨櫃港）
+      buildNebulaPrimeIsland();
+
+      // 02 賽博環礁（狹長島 + 龜形生化島礁 + 水晶聚落）
+      buildCyberLagoonIsland();
+
+      // 03 歐羅拉信標星（雙峰峽谷 + 旋轉全息雙層燈塔 + 連星長堤）
+      buildAuroraBeaconIsland();
+
+      // 04 雙子星（西雙子 + 東雙子 + 引力離子防護門）
+      buildGeminiTwinsIslands();
+    }
+
+    /* 島嶼地形多層次生成輔助函數 (浪花圈 -> 金屬紫岩岸 -> 生化翠綠坡 -> 晶體山脊) */
+    function createAlienTerrain(radiusX, radiusZ, height, mainColor, rockColor) {
+      const group = new THREE.Group();
+
+      // 底層發光生化浪花圈 (白色/能量青色光圈)
+      const foamGeo = new THREE.RingGeometry(radiusX * 0.9, radiusX * 1.25, 32);
+      foamGeo.rotateX(-Math.PI / 2);
+      const foamMat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide
+      });
+      const foam = new THREE.Mesh(foamGeo, foamMat);
+      foam.position.y = 0.05;
+      group.add(foam);
+
+      // 下層：暗色金屬岩岸 (黏土/微縮質感)
+      const baseGeo = new THREE.CylinderGeometry(radiusX * 0.85, radiusX, height * 0.35, 18);
+      const baseMat = new THREE.MeshStandardMaterial({
+        color: rockColor,
+        roughness: 0.8,
+        metalness: 0.3,
+        flatShading: true
+      });
+      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      baseMesh.position.y = height * 0.17;
+      baseMesh.castShadow = true;
+      baseMesh.receiveShadow = true;
+      group.add(baseMesh);
+
+      // 上層：生化異星草坡與山脊
+      const topGeo = new THREE.ConeGeometry(radiusX * 0.8, height * 0.7, 18);
+      const topMat = new THREE.MeshStandardMaterial({
+        color: mainColor,
+        roughness: 0.6,
+        metalness: 0.4,
+        flatShading: true
+      });
+      const topMesh = new THREE.Mesh(topGeo, topMat);
+      topMesh.position.y = height * 0.35 + (height * 0.7) / 2;
+      topMesh.castShadow = true;
+      topMesh.receiveShadow = true;
+      group.add(topMesh);
+
+      return group;
+    }
+
+    /* 【01 涅布拉・時態要塞星】 */
+    function buildNebulaPrimeIsland() {
+      const center = SECTORS_DATA[0].pos;
+      const island = new THREE.Group();
+      island.position.set(center.x, center.y, center.z);
+
+      // 主山體
+      const terrain = createAlienTerrain(12, 10, 8, 0x1e3a5f, 0x0f172a);
+      island.add(terrain);
+
+      // 地標 1：原形泰坦神像（手持照妖鏡金色光球）
+      const titanGroup = new THREE.Group();
+      titanGroup.position.set(-3, 8.5, -1);
+
+      // 蓮花基座
+      const baseGeo = new THREE.CylinderGeometry(1.5, 2, 0.8, 8);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0xffbe0b, metalness: 0.7, roughness: 0.2 });
+      titanGroup.add(new THREE.Mesh(baseGeo, baseMat));
+
+      // 泰坦軀幹 (極簡科幻風格巨神雕像)
+      const bodyGeo = new THREE.BoxGeometry(1.2, 3.2, 0.8);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 });
+      const titanBody = new THREE.Mesh(bodyGeo, bodyMat);
+      titanBody.position.y = 2;
+      titanGroup.add(titanBody);
+
+      // 手持原形照妖鏡光球 (高亮度發光金球)
+      const lanternGeo = new THREE.SphereGeometry(0.7, 16, 16);
+      const lanternMat = new THREE.MeshBasicMaterial({ color: 0xffbe0b });
+      const titanLantern = new THREE.Mesh(lanternGeo, lanternMat);
+      titanLantern.position.set(1.4, 3.2, 0.6);
+      titanGroup.add(titanLantern);
+
+      // 光球光暈
+      const glowGeo = new THREE.SphereGeometry(1.3, 16, 16);
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xffe600, transparent: true, opacity: 0.35 });
+      titanAuraGlow = new THREE.Mesh(glowGeo, glowMat);
+      titanAuraGlow.position.copy(titanLantern.position);
+      titanGroup.add(titanAuraGlow);
+
+      island.add(titanGroup);
+
+      // 地標 2：微縮量子碼頭與貨櫃場（對應福澳港）
+      const dockGeo = new THREE.BoxGeometry(6, 0.5, 4);
+      const dockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+      const dock = new THREE.Mesh(dockGeo, dockMat);
+      dock.position.set(4, 0.4, 4);
+      island.add(dock);
+
+      // 微縮能量貨櫃塊 (金、青、洋紅)
+      const boxColors = [0xffbe0b, 0x00f0ff, 0xf72585];
+      for (let i = 0; i < 5; i++) {
+        const boxGeo = new THREE.BoxGeometry(0.8, 0.6, 1.2);
+        const boxMat = new THREE.MeshStandardMaterial({ color: boxColors[i % 3] });
+        const box = new THREE.Mesh(boxGeo, boxMat);
+        box.position.set(2.5 + (i % 3) * 1.1, 0.9, 3 + Math.floor(i / 3) * 1.4);
+        island.add(box);
+      }
+
+      scene.add(island);
+      islandMeshes.push(island);
+    }
+
+    /* 【02 賽博・排毒語塊環礁】 */
+    function buildCyberLagoonIsland() {
+      const center = SECTORS_DATA[1].pos;
+      const island = new THREE.Group();
+      island.position.set(center.x, center.y, center.z);
+
+      // 狹長山體
+      const terrain = createAlienTerrain(14, 7, 7, 0x064e3b, 0x022c22);
+      terrain.scale.set(1.4, 1, 0.7);
+      island.add(terrain);
+
+      // 水晶石屋聚落（對應芹壁花崗岩石屋）
+      for (let i = 0; i < 4; i++) {
+        const houseGeo = new THREE.BoxGeometry(1.4, 1.2, 1.2);
+        const houseMat = new THREE.MeshStandardMaterial({
+          color: 0x00ff88,
+          metalness: 0.6,
+          roughness: 0.3,
+          wireframe: false
+        });
+        const house = new THREE.Mesh(houseGeo, houseMat);
+        house.position.set(-3 + i * 2.2, 3.5 + (i % 2) * 0.8, 1);
+        island.add(house);
+      }
+
+      // 芹壁龜島 轉化為：立體除錯生化龜島
+      const turtleGroup = new THREE.Group();
+      turtleGroup.position.set(0, 0.2, 8);
+      const shellGeo = new THREE.SphereGeometry(2.2, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+      const shellMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.4, flatShading: true });
+      const shell = new THREE.Mesh(shellGeo, shellMat);
+      turtleGroup.add(shell);
+
+      // 專屬龜島浪花光圈
+      const tFoamGeo = new THREE.RingGeometry(2.4, 3.2, 24);
+      tFoamGeo.rotateX(-Math.PI / 2);
+      const tFoam = new THREE.Mesh(tFoamGeo, new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+      turtleGroup.add(tFoam);
+
+      island.add(turtleGroup);
+
+      scene.add(island);
+      islandMeshes.push(island);
+    }
+
+    /* 【03 歐羅拉・全息信標星】 */
+    function buildAuroraBeaconIsland() {
+      const center = SECTORS_DATA[2].pos;
+      const island = new THREE.Group();
+      island.position.set(center.x, center.y, center.z);
+
+      // 峭壁地形
+      const terrain = createAlienTerrain(11, 9, 9, 0x164e63, 0x083344);
+      island.add(terrain);
+
+      // 連星長堤（對應中柱堤）
+      const bridgeGeo = new THREE.BoxGeometry(8, 0.6, 1.8);
+      const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x0891b2 });
+      const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
+      bridge.position.set(-8, 0.3, -2);
+      island.add(bridge);
+
+      // 歐羅拉全息燈塔（對應東引燈塔）
+      const towerGroup = new THREE.Group();
+      towerGroup.position.set(3, 9, 1);
+
+      // 塔身
+      const towerGeo = new THREE.CylinderGeometry(0.8, 1.2, 4.5, 12);
+      const towerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.2 });
+      towerGroup.add(new THREE.Mesh(towerGeo, towerMat));
+
+      // 圓頂
+      const domeGeo = new THREE.SphereGeometry(1, 16, 16);
+      const domeMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, metalness: 0.9, roughness: 0.1 });
+      const dome = new THREE.Mesh(domeGeo, domeMat);
+      dome.position.y = 2.4;
+      towerGroup.add(dome);
+
+      // 旋轉全息探照雙層光束 (Cone)
+      const beamGeo = new THREE.ConeGeometry(5, 26, 16, 1, true);
+      beamGeo.rotateX(Math.PI / 2);
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide
+      });
+      const beam1 = new THREE.Mesh(beamGeo, beamMat);
+      beam1.position.set(0, 2.4, 13);
+      towerGroup.add(beam1);
+      lighthouseBeams.push(beam1);
+
+      // 反向光束
+      const beam2 = beam1.clone();
+      beam2.rotation.y = Math.PI;
+      beam2.position.set(0, 2.4, -13);
+      towerGroup.add(beam2);
+      lighthouseBeams.push(beam2);
+
+      island.add(towerGroup);
+
+      scene.add(island);
+      islandMeshes.push(island);
+    }
+
+    /* 【04 雙子・引力雙星】 */
+    function buildGeminiTwinsIslands() {
+      const center = SECTORS_DATA[3].pos;
+      const island = new THREE.Group();
+      island.position.set(center.x, center.y, center.z);
+
+      // 西雙子星 (對應西莒)
+      const westTwin = createAlienTerrain(6, 6, 6, 0x4a044e, 0x2e1065);
+      westTwin.position.set(-5, 0, -2);
+      island.add(westTwin);
+
+      // 東雙子星 (對應東莒)
+      const eastTwin = createAlienTerrain(7, 7, 7, 0x701a75, 0x3b0764);
+      eastTwin.position.set(5, 0, 3);
+      island.add(eastTwin);
+
+      // 兩星之間的引力離子光橋
+      const arcPoints = [];
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
+        const x = -5 + t * 10;
+        const y = 3 + Math.sin(t * Math.PI) * 4;
+        const z = -2 + t * 5;
+        arcPoints.push(new THREE.Vector3(x, y, z));
+      }
+      const curve = new THREE.CatmullRomCurve3(arcPoints);
+      const tubeGeo = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
+      const tubeMat = new THREE.MeshBasicMaterial({ color: 0xb5179e, transparent: true, opacity: 0.7 });
+      const gravityBridge = new THREE.Mesh(tubeGeo, tubeMat);
+      island.add(gravityBridge);
+
+      scene.add(island);
+      islandMeshes.push(island);
+    }
+
+    /* 4. 量子穿梭艦隊 (3去程 + 3返程，自動偏移航道，乘浪起伏) */
+    function buildQuantumShuttleFleet() {
+      quantumFleet = [];
+
+      TRADE_ROUTES.forEach((route, routeIndex) => {
+        // 去程艦 (Forward)
+        const shipForward = createShuttleMesh(route.color);
+        scene.add(shipForward);
+        quantumFleet.push({
+          mesh: shipForward,
+          route: route,
+          direction: 1, // 正向
+          progress: (routeIndex * 0.33) % 1.0,
+          speed: 0.0018,
+          laneOffset: 2.2 // 右舷偏移演算法
+        });
+
+        // 返程艦 (Backward)
+        const shipBackward = createShuttleMesh(route.color);
+        scene.add(shipBackward);
+        quantumFleet.push({
+          mesh: shipBackward,
+          route: route,
+          direction: -1, // 反向
+          progress: (routeIndex * 0.33 + 0.5) % 1.0,
+          speed: 0.0018,
+          laneOffset: 2.2 // 右舷偏移演算法
+        });
+      });
+    }
+
+    /* 穿梭艦 3D 模型生成 */
+    function createShuttleMesh(colorHex) {
+      const shipGroup = new THREE.Group();
+
+      // 破浪艦首主體
+      const bodyGeo = new THREE.ConeGeometry(0.8, 2.6, 5);
+      bodyGeo.rotateX(Math.PI / 2);
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.85,
+        roughness: 0.2
+      });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      shipGroup.add(body);
+
+      // 駕駛艙
+      const cabGeo = new THREE.BoxGeometry(0.6, 0.4, 0.9);
+      const cabMat = new THREE.MeshBasicMaterial({ color: colorHex });
+      const cab = new THREE.Mesh(cabGeo, cabMat);
+      cab.position.set(0, 0.35, -0.2);
+      shipGroup.add(cab);
+
+      // 離子尾跡推進光束
+      const trailGeo = new THREE.CylinderGeometry(0.2, 0.05, 1.8, 8);
+      trailGeo.rotateX(Math.PI / 2);
+      const trailMat = new THREE.MeshBasicMaterial({
+        color: colorHex,
+        transparent: true,
+        opacity: 0.7
+      });
+      const trail = new THREE.Mesh(trailGeo, trailMat);
+      trail.position.set(0, 0, -1.8);
+      shipGroup.add(trail);
+
+      return shipGroup;
+    }
+
+    /* 5. 3D 浮動 HUD 標籤管理 */
+    let hudElements = [];
+    function init3DHUDLabels() {
+      const container = document.getElementById('hud-container');
+      container.innerHTML = '';
+      hudElements = [];
+
+      SECTORS_DATA.forEach((sector, idx) => {
+        const hud = document.createElement('div');
+        hud.className = 'floating-hud';
+        hud.style.setProperty('--hud-color', sector.hexStr);
+        hud.style.setProperty('--hud-glow', sector.glow);
+
+        hud.innerHTML = `
+          <div class="hud-label" onclick="selectSector(${idx})">${sector.name}</div>
+          <div class="hud-pin"></div>
+        `;
+        container.appendChild(hud);
+        hudElements.push({ element: hud, pos: sector.pos });
+      });
+    }
+
+    function update3DHUDLabels() {
+      const widthHalf = window.innerWidth / 2;
+      const heightHalf = window.innerHeight / 2;
+
+      hudElements.forEach((hudItem) => {
+        const v = new THREE.Vector3(hudItem.pos.x, hudItem.pos.y + 12, hudItem.pos.z);
+        v.project(camera);
+
+        // 如果在相機後方則隱藏
+        if (v.z > 1) {
+          hudItem.element.style.opacity = '0';
+          return;
+        }
+
+        const screenX = (v.x * widthHalf) + widthHalf;
+        const screenY = -(v.y * heightHalf) + heightHalf;
+
+        hudItem.element.style.opacity = '1';
+        hudItem.element.style.left = `${screenX}px`;
+        hudItem.element.style.top = `${screenY}px`;
+      });
+    }
+
+    /* ========================================================
+       3. 互動邏輯與動畫更新循環
+       ======================================================== */
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // 1. 即時頂點波浪計算 (setupCosmicEnergyOcean)
+      if (isHoloGridActive && oceanPosAttr) {
+        for (let i = 0; i < oceanPosAttr.count; i++) {
+          const vx = oceanPosAttr.getX(i);
+          const vz = oceanPosAttr.getZ(i);
+          const newY = getWaveHeightAt(vx, vz, elapsedTime);
+          oceanPosAttr.setY(i, newY);
+        }
+        oceanPosAttr.needsUpdate = true;
+        oceanGeometry.computeVertexNormals();
+      }
+
+      // 2. 泰坦光球呼吸金光
+      if (titanAuraGlow) {
+        const scale = 1.0 + Math.sin(elapsedTime * 3.0) * 0.25;
+        titanAuraGlow.scale.set(scale, scale, scale);
+      }
+
+      // 3. 信標燈塔 360 度旋轉
+      lighthouseBeams.forEach(beam => {
+        beam.rotation.y += 0.025;
+      });
+
+      // 4. 量子穿梭艦隊雙向巡航與乘浪更新
+      if (isFleetActive) {
+        quantumFleet.forEach(ship => {
+          ship.progress += ship.speed * ship.direction;
+          if (ship.progress > 1.0) ship.progress = 0;
+          if (ship.progress < 0) ship.progress = 1.0;
+
+          const p1 = ship.route.from;
+          const p2 = ship.route.to;
+
+          // 計算基礎直線插值
+          const curX = THREE.MathUtils.lerp(p1.x, p2.x, ship.progress);
+          const curZ = THREE.MathUtils.lerp(p1.z, p2.z, ship.progress);
+
+          // 計算航線前進切線向量以進行右舷偏移
+          const dirVec = new THREE.Vector3(p2.x - p1.x, 0, p2.z - p1.z).normalize();
+          const normalVec = new THREE.Vector3(-dirVec.z, 0, dirVec.x); // 法向量 (右舷)
+
+          const finalX = curX + normalVec.x * ship.laneOffset * ship.direction;
+          const finalZ = curZ + normalVec.z * ship.laneOffset * ship.direction;
+
+          // 乘浪起伏：讀取頂點波浪高度
+          const waveY = getWaveHeightAt(finalX, finalZ, elapsedTime) + 0.35;
+
+          ship.mesh.position.set(finalX, waveY, finalZ);
+
+          // 船頭朝向前進方向
+          const targetLook = new THREE.Vector3(
+            finalX + dirVec.x * ship.direction,
+            waveY,
+            finalZ + dirVec.z * ship.direction
+          );
+          ship.mesh.lookAt(targetLook);
+        });
+      }
+
+      // 5. 星系環繞巡航 (Auto-Tour)
+      if (isTouring) {
+        tourAngle += 0.005;
+        const radius = 75;
+        camera.position.x = Math.sin(tourAngle) * radius;
+        camera.position.z = Math.cos(tourAngle) * radius;
+        camera.position.y = 55;
+        controls.target.set(0, 0, 0);
+      }
+
+      controls.update();
+      update3DHUDLabels();
+      renderer.render(scene, camera);
+    }
+
+    /* ========================================================
+       4. UI 互動與事件處理
+       ======================================================== */
+    function selectSector(index, smoothMove = true) {
+      currentSectorIndex = index;
+      const sector = SECTORS_DATA[index];
+
+      // 更新膠囊按鈕狀態
+      const buttons = document.querySelectorAll('.capsule-btn');
+      buttons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+
+      // 更新戰情面板內容
+      document.getElementById('panel-tag').textContent = sector.code;
+      document.getElementById('panel-title').textContent = sector.name;
+      document.getElementById('panel-target').textContent = sector.target;
+      document.getElementById('panel-error').innerHTML = sector.errorHtml;
+      document.getElementById('panel-rule').innerHTML = sector.ruleHtml;
+      document.getElementById('panel-formula').textContent = sector.formulaText;
+
+      toggleMissionPanel(true);
+
+      // 相機平滑聚焦於該星島
+      if (smoothMove) {
+        isTouring = false;
+        document.getElementById('btn-camera-tour').classList.remove('active');
+
+        const targetPos = sector.pos;
+        // 相機移至星島前方稍微俯視
+        const targetCamX = targetPos.x + 22;
+        const targetCamY = targetPos.y + 26;
+        const targetCamZ = targetPos.z + 32;
+
+        smoothCameraMove(targetCamX, targetCamY, targetCamZ, targetPos.x, targetPos.y + 3, targetPos.z);
+      }
+    }
+
+    // 相機平滑過渡 (簡易 Lerp 漸變)
+    function smoothCameraMove(tx, ty, tz, lx, ly, lz) {
+      let t = 0;
+      const startCam = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const destCam = new THREE.Vector3(tx, ty, tz);
+      const destTarget = new THREE.Vector3(lx, ly, lz);
+
+      const animInterval = setInterval(() => {
+        t += 0.04;
+        camera.position.lerpVectors(startCam, destCam, t);
+        controls.target.lerpVectors(startTarget, destTarget, t);
+        if (t >= 1) {
+          clearInterval(animInterval);
+        }
+      }, 16);
+    }
+
+    function toggleMissionPanel(show) {
+      const panel = document.getElementById('mission-panel');
+      if (show) {
+        panel.classList.remove('collapsed');
+      } else {
+        panel.classList.add('collapsed');
+      }
+    }
+
+    function toggleHoloGrid() {
+      isHoloGridActive = !isHoloGridActive;
+      document.getElementById('btn-holo-grid').classList.toggle('active', isHoloGridActive);
+      cosmicOceanMesh.material.wireframe = !isHoloGridActive;
+    }
+
+    function toggleFleetMode() {
+      isFleetActive = !isFleetActive;
+      document.getElementById('btn-fleet').classList.toggle('active', isFleetActive);
+      quantumFleet.forEach(ship => {
+        ship.mesh.visible = isFleetActive;
+      });
+    }
+
+    function startPlanetaryTour() {
+      isTouring = !isTouring;
+      document.getElementById('btn-camera-tour').classList.toggle('active', isTouring);
+      if (isTouring) {
+        tourAngle = Math.atan2(camera.position.x, camera.position.z);
+      }
+    }
+
+    function resetView() {
+      isTouring = false;
+      document.getElementById('btn-camera-tour').classList.remove('active');
+      smoothCameraMove(0, 65, 80, 0, 0, 0);
+    }
+
+    /* Web Speech API: 瀏覽器原英語音朗讀口訣與示範 */
+    function speakCurrentMission() {
+      const sector = SECTORS_DATA[currentSectorIndex];
+      const speakBtn = document.getElementById('speak-btn-text');
+
+      if (!('speechSynthesis' in window)) {
+        alert("您的瀏覽器暫不支援語音合成合成功能。");
+        return;
+      }
+
+      window.speechSynthesis.cancel(); // 停止先前的發音
+
+      const utterance = new SpeechSynthesisUtterance(sector.voiceScript);
+      utterance.lang = 'zh-TW';
+      utterance.rate = 1.05;
+      utterance.pitch = 1.1;
+
+      speakBtn.textContent = "🔊 星際導師朗讀中...";
+
+      utterance.onend = () => {
+        speakBtn.textContent = "聽取星際導師・口訣語音導引";
+      };
+
+      utterance.onerror = () => {
+        speakBtn.textContent = "聽取星際導師・口訣語音導引";
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
